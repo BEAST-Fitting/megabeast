@@ -68,7 +68,7 @@ if __name__ == '__main__':
             if nstars_image[i,j] >= min_for_fit:
                 pixel_fit_status[i,j] = True
                 # get the saved sparse likelihoods
-                lnp_filename = "%s_%i_%i_lnp.hd5"%(projectname, i, j)
+                lnp_filename = "%s_%i_%i_lnp.hd5"%(projectname, j, i)
                 lnp_data = read_lnp_data(lnp_filename, nstars_image[i,j])
 
                 # get the completeness and BEAST model parameters for the
