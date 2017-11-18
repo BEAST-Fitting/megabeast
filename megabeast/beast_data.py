@@ -135,7 +135,8 @@ def extract_beast_data(beast_data, lnp_data):
         beast_on_lnp[cparam] = np.empty((n_lnps, n_stars), dtype=float)
     
     # loop over the stars and extract the requested BEAST data
-    for k in tqdm(range(n_stars), desc='extracting beast data'):
+    #for k in tqdm(range(n_stars), desc='extracting beast data'):
+    for k in range(n_stars):
         for cparam in beast_params:
             beast_on_lnp[cparam][:,k] = \
                             beast_data[cparam][lnp_data['indxs'][:,k]]
