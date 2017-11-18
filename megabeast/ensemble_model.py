@@ -132,7 +132,7 @@ def lnlike(phi, model_weights, lnp_data, beast_on_lnp):
     # weights are those that adjust the saved likelihoods for the new
     # ensemble model (ensemble "priors")
     #   save as log to allow easy summing later
-    weight_ratio = new_prior/beast_on_lnp['prior_weight']
+    weight_ratio = new_prior/model_weights.av_priors
 
     # compute the each star's integrated probability that it fits the new model
     # including the completeness function

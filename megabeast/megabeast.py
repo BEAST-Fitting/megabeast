@@ -49,7 +49,6 @@ if __name__ == '__main__':
     beast_data = read_beast_data(beast_seds_filename,
                                  beast_noise_filename,
                                  beast_params=['completeness',
-                                               'prior_weight', 
                                                'Av'])#,'Rv','f_A'])
 
     # setup for output

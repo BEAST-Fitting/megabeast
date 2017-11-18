@@ -61,7 +61,7 @@ def read_beast_data(filename,
                     noise_filename,
                     beast_params=['Av', 'Rv', 'f_A',
                                   'M_ini', 'logA', 'Z',
-                                  'grid_weight', 'prior_weight'],
+                                  'completeness'],
                     verbose=True):
     """
     Read in the beast data needed by all the pixels
@@ -77,8 +77,7 @@ def read_beast_data(filename,
     beast_params: strings
        contains the set of BEAST parameters to extract
        default = [completeness, 
-                  Av, Rv, f_A, M_ini, logA, Z, 
-                  grid_weight, prior_weight]
+                  Av, Rv, f_A, M_ini, logA, Z]
 
     Returns
     -------
