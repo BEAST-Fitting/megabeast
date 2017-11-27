@@ -1,4 +1,4 @@
-Hierarchical Bayesian Model of BEAST resutls
+Hierarchical Bayesian Model of BEAST results
 --------------------------------------------
 
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
