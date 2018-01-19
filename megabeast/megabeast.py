@@ -12,14 +12,14 @@ import numpy as np
 import scipy.optimize as op
 from astropy.io import fits
 
-# beast 
+# beast
 from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 
 # megabeast
 from beast_data import (read_beast_data, extract_beast_data,
                         read_lnp_data)
-from ensemble_model import lnprob
-    
+from ensemble_model import lnpro
+
 if __name__ == '__main__':
     # commandline parser
     parser = argparse.ArgumentParser()
@@ -33,16 +33,16 @@ if __name__ == '__main__':
     projectname = args.projectname
     min_for_fit = args.min_for_fit
     verbose = args.verbose
-    
+
     # setup the megabeast model including defining the priors
     #   - dust distribution model
     #   - stellar populations model (later)
-        
+
     # use nstars image to setup for each pixel
-    nstars_filename = "%s_nstars.fits"%(projectname)
+    nstars_filename = "%s_nstars.fits" % (projectname)
     nstars_image, nstars_header = fits.getdata(nstars_filename, header=True)
     n_x, n_y = nstars_image.shape
-    
+
     # read in the beast data that is needed by all the pixels
     beast_seds_filename = "%s_seds.grid.hd5"%(projectname)
     beast_noise_filename = "%s_noisemodel.hd5"%(projectname)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     fit_param_names = ['Av1', 'Av2', 'sigma1', 'sigma2', 'N1', 'N2']
     n_fit_params = len(fit_param_names)
     best_fit_images = np.zeros((n_x, n_y, n_fit_params), dtype=float)
-    
+
     # loop over the pixels with non-zero entries in the nstars image
     for i in trange(n_x, desc="x pixels"):
         for j in trange(n_y, desc="y pixels", leave=False):
@@ -73,7 +73,7 @@ if __name__ == '__main__':
                 # get the completeness and BEAST model parameters for the
                 #   same grid points as the sparse likelihoods
                 beast_on_lnp = extract_beast_data(beast_data, lnp_data)
-                
+
                 # initialize the ensemble model with the parameters used
                 # for the saved BEAST model run results
                 #   currently only dust parameters allowed
@@ -107,14 +107,14 @@ if __name__ == '__main__':
     #    - best fit
     #    - megabeast parameter 1D pPDFs
     #    - MCMC chain
-    
+
     master_header = nstars_header
     # Now, write the maps to disk
-    
+
     for k, cname in enumerate(fit_param_names):
 
         hdu = fits.PrimaryHDU(best_fit_images[:,:,k], header=master_header)
 
         # Save to FITS file
         hdu.writeto("%s_%s_bestfit.fits"%(projectname, cname),
-                    overwrite=True)    
+                    overwrite=True)
