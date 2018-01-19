@@ -11,6 +11,7 @@ import numpy as np
 # beast imports
 from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 
+
 # temporary for development - remove and use PriorWeightsDust only
 def _lognorm(x, max_pos, sigma=0.5, N=1.):
     """
@@ -44,14 +45,15 @@ def _lognorm(x, max_pos, sigma=0.5, N=1.):
 
     log_x = np.log(x[indxs])
     normalization = sqrt_2pi / (x[indxs] * sigma)
-    
-    lnorm[indxs] = (N * normalization 
+
+    lnorm[indxs] = (N * normalization
                     * np.exp(-0.5 * ((log_x - mu) / sigma)**2))
     return lnorm
 
-def _two_lognorm(xs, 
-                 max_pos1, max_pos2, 
-                 sigma1=0.5, sigma2=0.5, 
+
+def _two_lognorm(xs,
+                 max_pos1, max_pos2,
+                 sigma1=0.5, sigma2=0.5,
                  N1=1., N2=1.):
     """
     Mixture of 2 lognormal functions
@@ -84,6 +86,7 @@ def _two_lognorm(xs,
                  + _lognorm(xs, max_pos2, sigma=sigma2, N=N2))
     return pointwise
 
+
 def lnlike(phi, model_weights, lnp_data, beast_on_lnp):
     """
     Compute the log(likelihood) for the ensemble parameters
@@ -110,24 +113,19 @@ def lnlike(phi, model_weights, lnp_data, beast_on_lnp):
     # unpack ensemble parameters (Av only)
     max_pos1, max_pos2, sigma1, sigma2, N1, N2 = phi
 
-    # compute the ensemble model for all the model grid points for all the stars
+    # compute the ensemble model for all the model grid points for all stars
     #   temp code for development
     #   will change to using the PriorWeightsDust for production
     n_lnps, n_stars = model_weights.av_vals.shape
     new_prior = np.empty(model_weights.av_vals.shape, dtype=float)
     for k in range(n_stars):
-        new_prior[:,k] = _two_lognorm(model_weights.av_vals[:,k],
-                                      max_pos1, max_pos2,
-                                      sigma1=sigma1, sigma2=sigma2,
-                                      N1=N1, N2=N2)
-        if not np.isfinite(np.sum(new_prior[:,k])):
-            print(new_prior[:,k])
+        new_prior[:, k] = _two_lognorm(model_weights.av_vals[:, k],
+                                       max_pos1, max_pos2,
+                                       sigma1=sigma1, sigma2=sigma2,
+                                       N1=N1, N2=N2)
+        if not np.isfinite(np.sum(new_prior[:, k])):
+            print(new_prior[:, k])
             exit()
-        #if np.sum(new_prior[:,k]) == 0.:
-        #    print(new_prior[:,k])
-        #    print(model_weights.av_vals[:,k])
-        #    exit()
-            
 
     # weights are those that adjust the saved likelihoods for the new
     # ensemble model (ensemble "priors")
@@ -137,26 +135,27 @@ def lnlike(phi, model_weights, lnp_data, beast_on_lnp):
     # compute the each star's integrated probability that it fits the new model
     # including the completeness function
     star_probs = np.sum(weight_ratio
-                        *beast_on_lnp['completeness']
-                        *np.exp(lnp_data['vals']),axis=0)
+                        * beast_on_lnp['completeness']
+                        * np.exp(lnp_data['vals']), axis=0)
 
     # remove any results that have zero integrated probabilities
     #   need to check why this is the case - all A(V) values of 0?
     indxs, = np.where(star_probs > 0.)
 
-    #print(np.sum(new_prior,axis=0))
-    #print(np.sum(np.exp(lnp_data['vals']),axis=0))
-    #print(np.sum(beast_on_lnp['completeness'],axis=0))
-    #print(star_probs)
-    #print('---')
-    #print(star_probs[indxs])
-    #print('---')
-    #print(np.sum(np.log(star_probs[indxs])))
-    #print('===')
-    #exit()
+    # print(np.sum(new_prior,axis=0))
+    # print(np.sum(np.exp(lnp_data['vals']),axis=0))
+    # print(np.sum(beast_on_lnp['completeness'],axis=0))
+    # print(star_probs)
+    # print('---')
+    # print(star_probs[indxs])
+    # print('---')
+    # print(np.sum(np.log(star_probs[indxs])))
+    # print('===')
+    # exit()
 
-    # return the log product of the stars' probabilities 
+    # return the log product of the stars' probabilities
     return np.sum(np.log(star_probs[indxs]))
+
 
 def lnprior(phi):
     """
@@ -177,15 +176,16 @@ def lnprior(phi):
     max_pos1, max_pos2, sigma1, sigma2, N1, N2 = phi
 
     if (0.05 <= sigma1 < 2
-        and 0.05 <= sigma2 < 2
-        and 0 <= max_pos1 < 2
-        and 0 <= max_pos2 < 3
-        and max_pos1 < max_pos2
-        and N1 >= 0
-        and N2 >= 0):
+            and 0.05 <= sigma2 < 2
+            and 0 <= max_pos1 < 2
+            and 0 <= max_pos2 < 3
+            and max_pos1 < max_pos2
+            and N1 >= 0
+            and N2 >= 0):
         return 0.0
     else:
         return -np.inf
+
 
 def lnprob(phi, model_weights, lnp_data, beast_on_lnp):
     """
@@ -215,4 +215,3 @@ def lnprob(phi, model_weights, lnp_data, beast_on_lnp):
     if not np.isfinite(ln_prior):
         return -np.inf
     return ln_prior + lnlike(phi, model_weights, lnp_data, beast_on_lnp)
-    
