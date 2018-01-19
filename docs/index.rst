@@ -68,4 +68,5 @@ contributors page on Github
 Reference/API
 =============
 
-.. automodapi:: megabeast
+.. automodapi:: megabeast.ensemble_model
+.. automodapi:: megabeast.beast_data

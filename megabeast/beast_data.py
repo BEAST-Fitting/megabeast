@@ -10,6 +10,7 @@ import numpy as np
 import h5py
 from tqdm import tqdm
 
+
 def read_lnp_data(filename, nstars):
     """
     Read in the sparse lnp for all the stars in the hdf5 file
@@ -44,18 +45,18 @@ def read_lnp_data(filename, nstars):
                 lnp_vals = np.zeros((n_ivals, nstars), dtype=float)
                 lnp_indxs = np.zeros((n_ivals, nstars), dtype=int)
                 lnp_init = True
-                
-            lnp_vals[:,k] = lnp_hdf[sname]['lnp'].value
-            lnp_indxs[:,k] = np.int64(np.array(lnp_hdf[sname]['idx'].value))
+
+            lnp_vals[:, k] = lnp_hdf[sname]['lnp'].value
+            lnp_indxs[:, k] = np.int64(np.array(lnp_hdf[sname]['idx'].value))
         lnp_hdf.close()
 
         # shift the log(likelihood) values to have a max of 0.0
         #  ok if the same shift is applied to all stars in a pixel
         #  avoids numerical issues later when we go to intergrate probs
         lnp_vals -= np.max(lnp_vals)
-        
+
         return {'vals': lnp_vals, 'indxs': lnp_indxs}
-    
+
 
 def read_beast_data(filename,
                     noise_filename,
@@ -76,8 +77,7 @@ def read_beast_data(filename,
 
     beast_params: strings
        contains the set of BEAST parameters to extract
-       default = [completeness, 
-                  Av, Rv, f_A, M_ini, logA, Z]
+       default = [completeness, Av, Rv, f_A, M_ini, logA, Z]
 
     Returns
     -------
@@ -103,12 +103,12 @@ def read_beast_data(filename,
     beast_seds_hdf.close()
 
     return beast_data
-    
+
 
 def extract_beast_data(beast_data, lnp_data):
     """
     Read in the beast data for the locations where the lnp values
-    were saved 
+    were saved
 
     Parameters
     ----------
@@ -132,12 +132,12 @@ def extract_beast_data(beast_data, lnp_data):
     n_lnps, n_stars = lnp_data['indxs'].shape
     for cparam in beast_params:
         beast_on_lnp[cparam] = np.empty((n_lnps, n_stars), dtype=float)
-    
+
     # loop over the stars and extract the requested BEAST data
-    #for k in tqdm(range(n_stars), desc='extracting beast data'):
+    # for k in tqdm(range(n_stars), desc='extracting beast data'):
     for k in range(n_stars):
         for cparam in beast_params:
-            beast_on_lnp[cparam][:,k] = \
-                            beast_data[cparam][lnp_data['indxs'][:,k]]
+            beast_on_lnp[cparam][:, k] = \
+                            beast_data[cparam][lnp_data['indxs'][:, k]]
 
     return beast_on_lnp
