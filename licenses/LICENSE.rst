@@ -1,4 +1,4 @@
-Copyright (c) year, Karl Gordon and BEAST Team
+Copyright (c) 2018, Karl Gordon and BEAST Team
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
