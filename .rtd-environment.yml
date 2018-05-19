@@ -11,5 +11,6 @@ dependencies:
     - sphinx-astropy
     - h5py
     - scipy
+    - tqdm
 #   - pip:
 #       - dependency_from_pip
