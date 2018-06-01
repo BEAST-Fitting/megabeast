@@ -43,3 +43,5 @@ The mapped ensemble parameters include (but are not limited to):
 - column A(V)
 - average grain size R(V)
 - grain composition measure f_A
+- galaxy distance
+- galaxy depth
