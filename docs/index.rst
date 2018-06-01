@@ -14,6 +14,7 @@ User Documentation
 .. toctree::
    :maxdepth: 2
 
+   Motivation and Goals <megabeast/goals.rst>
    How to run <megabeast/running.rst>
 
 Installation
