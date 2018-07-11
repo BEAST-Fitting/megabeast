@@ -18,7 +18,8 @@ from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 # megabeast
 from beast_data import (read_beast_data, extract_beast_data,
                         read_lnp_data)
-from ensemble_model import lnpro
+from ensemble_model import lnprob
+
 
 if __name__ == '__main__':
     # commandline parser
