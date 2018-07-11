@@ -7,11 +7,11 @@ import numpy as np
 
 from astropy import wcs
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, vstack
 
 
 def setup_spatial_regions(cat,
-                          pix_size=5.0):
+                          pix_size=10.0):
     """
     The spatial regions are setup via a WCS object
 
@@ -109,8 +109,11 @@ if __name__ == '__main__':
 
     # commandline parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("stats_filename",
-                        help="Filename of the stats")
+    parser.add_argument('stats_filename', metavar='fname',
+                        type=str, nargs='+',
+                        help="Filename(s) of the stats")
+    parser.add_argument("--pix_size", default=10., type=float,
+                        help="pixel scale [arcsec]")
     args = parser.parse_args()
 
     stats_filename = args.stats_filename
@@ -120,11 +123,16 @@ if __name__ == '__main__':
     stat_type = 'Exp'
 
     # read in the full brick catalog
-    cat = Table.read(stats_filename)
+    cat = Table.read(stats_filename[0])
+    if len(stats_filename) > 0:
+        for fname in stats_filename[1:]:
+            tcat = Table.read(fname)
+            cat = vstack([cat, tcat])
 
     # generate the wcs info for the output FITS files
     #    also provides the mapping info from ra,dec to x,y
-    wcs_info, n_x, n_y = setup_spatial_regions(cat)
+    wcs_info, n_x, n_y = setup_spatial_regions(cat,
+                                               pix_size=args.pix_size)
 
     # get the pixel coordinates for each source
     xy_vals = regions_for_objects(cat['RA'],
@@ -138,13 +146,15 @@ if __name__ == '__main__':
     n_sum = 2
     sum_stats = ['Av', 'Rv', 'f_A']
     n_sum = len(sum_stats)
-    summary_stats = np.zeros((n_y, n_x, n_sum), dtype=float)
+    summary_stats = np.zeros((n_y, n_x, n_sum+1), dtype=float)
 
     # loop through the pixels and generate the summary stats
     for i in range(n_x):
         for j in range(n_y):
-            tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
+            tindxs, = np.where((x == i) & (y == j))
+            # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
             if len(tindxs) > 0:
+                summary_stats[j, i, n_sum] = len(tindxs)
                 print(i, j, len(tindxs))
                 for k, cur_stat in enumerate(sum_stats):
                     summary_stats[j, i, k] = np.average(cat[cur_stat+'_'
@@ -155,7 +165,10 @@ if __name__ == '__main__':
     for k, cur_stat in enumerate(sum_stats):
         hdu = fits.PrimaryHDU(summary_stats[:, :, k],
                               header=master_header)
-
-        # Save to FITS file
-        hdu.writeto(stats_filename.replace('stats', 'map' + cur_stat),
+        hdu.writeto(stats_filename[0].replace('stats', 'map' + cur_stat),
                     overwrite=True)
+
+    hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum],
+                          header=master_header)
+    hdu.writeto(stats_filename[0].replace('stats', 'npts'),
+                overwrite=True)
