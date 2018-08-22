@@ -21,19 +21,22 @@ from beast_data import (read_beast_data, extract_beast_data,
 from ensemble_model import lnprob
 
 
-if __name__ == '__main__':
-    # commandline parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument("projectname",
-                        help="project name to use (basename for files)")
-    parser.add_argument("--min_for_fit", default=20, type=int,
-                        help="minimum number of stars need in a pixel for fit")
-    parser.add_argument("-v", "--verbose", help="verbose output",
-                        action="store_true")
-    args = parser.parse_args()
-    projectname = args.projectname
-    min_for_fit = args.min_for_fit
-    verbose = args.verbose
+def megabeast(projectname, min_for_fit=20, verbose=True):
+    """
+    Run the MegaBEAST on each of the spatially-reordered BEAST outputs.
+
+    Parameters
+    ----------
+    projectname : string
+        Project name to use (basename for files)
+
+    min_for_fit : int (default=20)
+        minimum number of stars need in a pixel for fit
+
+    verbose : boolean (default=True)
+        print extra info
+
+    """
 
     # setup the megabeast model including defining the priors
     #   - dust distribution model
@@ -119,3 +122,18 @@ if __name__ == '__main__':
         # Save to FITS file
         hdu.writeto("%s_%s_bestfit.fits"%(projectname, cname),
                     overwrite=True)
+
+
+if __name__ == '__main__':
+    # commandline parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("projectname",
+                        help="project name to use (basename for files)")
+    parser.add_argument("--min_for_fit", default=20, type=int,
+                        help="minimum number of stars need in a pixel for fit")
+    parser.add_argument("-v", "--verbose", help="verbose output",
+                        action="store_true")
+    args = parser.parse_args()
+
+    megabeast(args.projectname, min_for_fit=args.min_for_fit, verbose=args.verbose)
+
