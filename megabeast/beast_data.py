@@ -40,7 +40,7 @@ def read_lnp_data(filename, nstars):
         # - find the length of the sparse likelihoods
         lnp_sizes = [lnp_hdf[sname]['lnp'].value.shape[0] for sname in lnp_hdf.keys()]
         # - set arrays to the maximum size
-        lnp_vals = np.zeros((np.max(lnp_sizes), nstars), dtype=float)
+        lnp_vals = np.zeros((np.max(lnp_sizes), nstars), dtype=float) - np.inf
         lnp_indxs = np.zeros((np.max(lnp_sizes), nstars), dtype=int)
         
         # loop over all the stars (groups)
