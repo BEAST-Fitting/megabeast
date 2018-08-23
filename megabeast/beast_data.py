@@ -45,8 +45,8 @@ def read_lnp_data(filename, nstars):
         
         # loop over all the stars (groups)
         for k, sname in enumerate(lnp_hdf.keys()):
-            lnp_vals[:, k] = lnp_hdf[sname]['lnp'].value
-            lnp_indxs[:, k] = np.int64(np.array(lnp_hdf[sname]['idx'].value))
+            lnp_vals[:lnp_sizes[k], k] = lnp_hdf[sname]['lnp'].value
+            lnp_indxs[:lnp_sizes[k], k] = np.int64(np.array(lnp_hdf[sname]['idx'].value))
         lnp_hdf.close()
 
         # shift the log(likelihood) values to have a max of 0.0
