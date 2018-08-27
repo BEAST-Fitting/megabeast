@@ -36,18 +36,17 @@ def read_lnp_data(filename, nstars):
         lnp_hdf.close()
         exit()
     else:
+        # initialize arrays
+        # - find the length of the sparse likelihoods
+        lnp_sizes = [lnp_hdf[sname]['lnp'].value.shape[0] for sname in lnp_hdf.keys()]
+        # - set arrays to the maximum size
+        lnp_vals = np.zeros((np.max(lnp_sizes), nstars), dtype=float) - np.inf
+        lnp_indxs = np.zeros((np.max(lnp_sizes), nstars), dtype=int)
+        
         # loop over all the stars (groups)
-        lnp_init = False
         for k, sname in enumerate(lnp_hdf.keys()):
-            if not lnp_init:
-                istar_lnp = lnp_hdf[sname]['lnp'].value
-                n_ivals, = istar_lnp.shape
-                lnp_vals = np.zeros((n_ivals, nstars), dtype=float)
-                lnp_indxs = np.zeros((n_ivals, nstars), dtype=int)
-                lnp_init = True
-
-            lnp_vals[:, k] = lnp_hdf[sname]['lnp'].value
-            lnp_indxs[:, k] = np.int64(np.array(lnp_hdf[sname]['idx'].value))
+            lnp_vals[:lnp_sizes[k], k] = lnp_hdf[sname]['lnp'].value
+            lnp_indxs[:lnp_sizes[k], k] = np.int64(np.array(lnp_hdf[sname]['idx'].value))
         lnp_hdf.close()
 
         # shift the log(likelihood) values to have a max of 0.0
