@@ -23,8 +23,9 @@ lnp_file_prefix = ./14675_LMC-5665ne-12232_beast/spatial/14675_LMC-5665ne-12232
 # MegaBEAST settings
 # ------------------
 
-# name of the folder in which to put megabeast outputs
-project = 14675_LMC-5665ne-12232_megabeast
+# project name to use for megabeast output files
+# megabeast outputs will be saved in projectname_megabeast folder
+projectname = 14675_LMC-5665ne-12232
 
 # parameters for the megabeast to fit
 fit_param_names = ['Av1', 'Av2', 'sigma1', 'sigma2', 'N1', 'N2']
