@@ -5,6 +5,7 @@ Script to run the MegaBEAST on BEAST results.
 # system
 from __future__ import (absolute_import, division, print_function)
 import argparse
+import os
 
 # other packages
 from tqdm import (tqdm, trange)
@@ -110,6 +111,10 @@ def megabeast(megabeast_input_file, verbose=True):
 
     master_header = nstars_header
     # Now, write the maps to disk
+
+    # check that the directory exists
+    if not os.path.exists('./'+mb_settings['projectname'] + '_megabeast/'):
+        os.makedirs('./'+mb_settings['projectname'] + '_megabeast/')
 
     for k, cname in enumerate(mb_settings['fit_param_names']):
 
