@@ -1,0 +1,34 @@
+
+# -----------
+# BEAST files
+# -----------
+
+# files that contain the SEDs and noise model from the BEAST
+beast_seds_filename = ./14675_LMC-5665ne-12232_beast/14675_LMC-5665ne-12232_beast_seds.grid.hd5
+beast_noise_filename = ./14675_LMC-5665ne-12232_beast/14675_LMC-5665ne-12232_beast_noisemodel.hd5
+
+# prior models for those
+av_prior_model = {'name': 'flat'}
+rv_prior_model = {'name': 'flat'}
+fA_prior_model = {'name': 'flat'}
+
+# fits file that contains the number of stars in each spatially-reordered pixel
+nstars_filename = ./14675_LMC-5665ne-12232_beast/spatial/14675_LMC-5665ne-12232_nstars.fits
+
+# prefix for log likelihoods
+# file will be constructed as lnp_file_prefix_#_#_lnp.hd5, where #s are the spatially reordered pixel numbers
+lnp_file_prefix = ./14675_LMC-5665ne-12232_beast/spatial/14675_LMC-5665ne-12232
+
+# ------------------
+# MegaBEAST settings
+# ------------------
+
+# project name to use for megabeast output files
+# megabeast outputs will be saved in projectname_megabeast folder
+projectname = 14675_LMC-5665ne-12232
+
+# parameters for the megabeast to fit
+fit_param_names = ['Av1', 'Av2', 'sigma1', 'sigma2', 'N1', 'N2']
+
+# minimum number of stars need in a pixel for fit
+min_for_fit = 20

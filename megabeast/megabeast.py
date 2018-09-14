@@ -5,6 +5,7 @@ Script to run the MegaBEAST on BEAST results.
 # system
 from __future__ import (absolute_import, division, print_function)
 import argparse
+import os
 
 # other packages
 from tqdm import (tqdm, trange)
@@ -16,50 +17,49 @@ from astropy.io import fits
 from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 
 # megabeast
+from read_megabeast_input import read_megabeast_input
 from beast_data import (read_beast_data, extract_beast_data,
                         read_lnp_data)
 from ensemble_model import lnprob
 
+import pdb
 
-def megabeast(projectname, min_for_fit=20, verbose=True):
+def megabeast(megabeast_input_file, verbose=True):
     """
     Run the MegaBEAST on each of the spatially-reordered BEAST outputs.
 
     Parameters
     ----------
-    projectname : string
-        Project name to use (basename for files)
-
-    min_for_fit : int (default=20)
-        minimum number of stars need in a pixel for fit
+    megabeast_input_file : string
+        Name of the file that contains settings, filenames, etc
 
     verbose : boolean (default=True)
         print extra info
 
     """
 
+    # read in the settings from the file
+    mb_settings = read_megabeast_input(megabeast_input_file)
+    
+
     # setup the megabeast model including defining the priors
     #   - dust distribution model
     #   - stellar populations model (later)
 
     # use nstars image to setup for each pixel
-    nstars_filename = "%s_nstars.fits" % (projectname)
-    nstars_image, nstars_header = fits.getdata(nstars_filename, header=True)
+    nstars_image, nstars_header = fits.getdata(mb_settings['nstars_filename'], header=True)
     n_x, n_y = nstars_image.shape
 
     # read in the beast data that is needed by all the pixels
-    beast_seds_filename = "%s_seds.grid.hd5"%(projectname)
-    beast_noise_filename = "%s_noisemodel.hd5"%(projectname)
-    beast_data = read_beast_data(beast_seds_filename,
-                                 beast_noise_filename,
+    beast_data = read_beast_data(mb_settings['beast_seds_filename'],
+                                 mb_settings['beast_noise_filename'],
                                  beast_params=['completeness',
                                                'Av'])#,'Rv','f_A'])
 
     # setup for output
     pixel_fit_status = np.full((n_x, n_y), False, dtype=bool)
-    fit_param_names = ['Av1', 'Av2', 'sigma1', 'sigma2', 'N1', 'N2']
-    n_fit_params = len(fit_param_names)
-    best_fit_images = np.zeros((n_x, n_y, n_fit_params), dtype=float)
+    n_fit_params = len(mb_settings['fit_param_names'])
+    best_fit_images = np.zeros((n_x, n_y, n_fit_params), dtype=float) + np.nan
 
     # loop over the pixels with non-zero entries in the nstars image
     for i in trange(n_x, desc="x pixels"):
@@ -68,10 +68,10 @@ def megabeast(projectname, min_for_fit=20, verbose=True):
     #    for j in [6]:
             if verbose:
                 print("working on (%i,%i)"%(i,j))
-            if nstars_image[i,j] >= min_for_fit:
+            if nstars_image[i,j] >= mb_settings['min_for_fit']:
                 pixel_fit_status[i,j] = True
                 # get the saved sparse likelihoods
-                lnp_filename = "%s_%i_%i_lnp.hd5"%(projectname, j, i)
+                lnp_filename = mb_settings['lnp_file_prefix']+"_%i_%i_lnp.hd5"%(j, i)
                 lnp_data = read_lnp_data(lnp_filename, nstars_image[i,j])
 
                 # get the completeness and BEAST model parameters for the
@@ -85,12 +85,9 @@ def megabeast(projectname, min_for_fit=20, verbose=True):
                 avs = beast_on_lnp['Av']
                 rvs = [3.1]#beast_data['Rv']
                 fAs = [1.0]#beast_data['f_A']
-                av_prior_model = {'name': 'flat'}
-                rv_prior_model = {'name': 'flat'}
-                fA_prior_model = {'name': 'flat'}
-                dustpriors = PriorWeightsDust(avs, av_prior_model,
-                                              rvs, rv_prior_model,
-                                              fAs, fA_prior_model)
+                dustpriors = PriorWeightsDust(avs, mb_settings['av_prior_model'],
+                                              rvs, mb_settings['rv_prior_model'],
+                                              fAs, mb_settings['fA_prior_model'])
 
                 # standard minimization to find initial values
                 chi2 = lambda * args: -1.0*lnprob(*args)
@@ -115,25 +112,28 @@ def megabeast(projectname, min_for_fit=20, verbose=True):
     master_header = nstars_header
     # Now, write the maps to disk
 
-    for k, cname in enumerate(fit_param_names):
+    # check that the directory exists
+    if not os.path.exists('./'+mb_settings['projectname'] + '_megabeast/'):
+        os.makedirs('./'+mb_settings['projectname'] + '_megabeast/')
+
+    for k, cname in enumerate(mb_settings['fit_param_names']):
 
         hdu = fits.PrimaryHDU(best_fit_images[:,:,k], header=master_header)
 
         # Save to FITS file
-        hdu.writeto("%s_%s_bestfit.fits"%(projectname, cname),
+        hdu.writeto("%s_megabeast/%s_%s_bestfit.fits"%(mb_settings['projectname'], mb_settings['projectname'], cname),
                     overwrite=True)
 
+        
 
 if __name__ == '__main__':
     # commandline parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("projectname",
-                        help="project name to use (basename for files)")
-    parser.add_argument("--min_for_fit", default=20, type=int,
-                        help="minimum number of stars need in a pixel for fit")
+    parser.add_argument("megabeast_input_file",
+                        help="Name of the file that contains settings, filenames, etc")
     parser.add_argument("-v", "--verbose", help="verbose output",
                         action="store_true")
     args = parser.parse_args()
 
-    megabeast(args.projectname, min_for_fit=args.min_for_fit, verbose=args.verbose)
+    megabeast(args.megabeast_input_file, verbose=args.verbose)
 
