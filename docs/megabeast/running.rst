@@ -2,22 +2,30 @@
 Running the MegaBEAST
 #####################
 
+**********
+Background
+**********
+
 The MegaBEAST is specifically setup to use the output of BEAST
-runs.  Tt uses the results ordered spatially to have
+runs.  It uses the results ordered spatially to have
 all the stars in a region split in to smaller pixels.  For example,
 the BEAST results for a PHAT brick will have many files with each
 file giving the results for a 5x5 arcsec^2 pixel.  The MegaBEAST uses
 the BEAST nD pPDFs, usually in the form of a small subset of the
 full pPDFs points sampled from the region with significant probability.
 
-The files the MegaBEAST expects to find filenames in the
-format of name_XX_XX_lnp.hd5 where the XX and YY values are the
+The MegaBEAST expects to find filenames in the
+format of name_XX_YY_lnp.hd5 where the XX and YY values are the
 pixel coordinates x and y.  The translation between the x,y values and
 ra,dec are given in the name_nstars.fits file that was created
 when the BEAST spatial reordering was done.
 
 More information on the BEAST spatial reordering can be found in the
 `BEAST documentation <http://beast.readthedocs.io/en/latest/workflow.html#post-processing>`_.
+
+*******
+Running
+*******
 
 Once the spatially reordered BEAST data is ready, the MegaBEAST is run
 from the commandline.
@@ -31,7 +39,7 @@ The options can be found with the usual command.
 .. code-block:: shell
 
   $ python megabeast.py --help
-  usage: megabeast.py [-h] [-v] projectname
+  usage: megabeast.py [-h] [-v] megabeast_input_file
 
   positional arguments:
     megabeast_input_file  Name of the file that contains settings, filenames,
@@ -57,6 +65,37 @@ settings and file names.  An example can be found
         - `fit_param_names`: list of the names of the parameters to fit
         - `min_for_fit`: minimum number of stars needed in a pixel for fitting
 
+
+
+*****************
+MegaBEAST wrapper
+*****************
+
+In the `examples
+<https://github.com/BEAST-Fitting/megabeast/tree/master/megabeast/examples>`_,
+there is also a wrapper that can run both the MegaBEAST (as descibed
+above) and run code to create diagnostic plots (implementation in progress).
+
+.. code-block:: shell
+
+  $ python megabeast_wrapper.py --help
+  usage: megabeast_wrapper.py [-h] [-m] [-p] [-v] megabeast_input_file
+
+  positional arguments:
+    megabeast_input_file  Name of the file that contains settings, filenames,
+                          etc
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    -m, --run_megabeast   Run the MegaBEAST
+    -p, --diagnostic_plots
+                          Generate diagnostic plots
+    -v, --verbose         verbose output
+
+
+*****************
+MegaBEAST outputs
+*****************
 
 The results of the MegaBEAST are the best fit values for the ensemble model
 for the A(V) distribution.  Currently, only the A(V) ensemble model is
