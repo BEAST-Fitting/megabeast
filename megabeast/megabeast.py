@@ -17,10 +17,10 @@ from astropy.io import fits
 from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 
 # megabeast
-from read_megabeast_input import read_megabeast_input
-from beast_data import (read_beast_data, extract_beast_data,
+from .read_megabeast_input import read_megabeast_input
+from .beast_data import (read_beast_data, extract_beast_data,
                         read_lnp_data)
-from ensemble_model import lnprob
+from .ensemble_model import lnprob
 
 import pdb
 
