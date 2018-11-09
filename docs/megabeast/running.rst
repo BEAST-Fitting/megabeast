@@ -74,7 +74,7 @@ MegaBEAST wrapper
 In the `examples
 <https://github.com/BEAST-Fitting/megabeast/tree/master/megabeast/examples>`_,
 there is also a wrapper that can run both the MegaBEAST (as descibed
-above) and run code to create diagnostic plots (implementation in progress).
+above) and run code to create diagnostic plots.
 
 .. code-block:: shell
 
@@ -91,6 +91,15 @@ above) and run code to create diagnostic plots (implementation in progress).
     -p, --diagnostic_plots
                           Generate diagnostic plots
     -v, --verbose         verbose output
+
+
+
+If the diagnostic plots are made, it will create a PDF file with two (or more) plots:
+
+  * completeness vs Av, which evaluates how well that stars with a given Av are recovered
+  * histograms of Av within each of the spatially-reorganized pixels
+  * if `chi2_plot` is set for `plot_input_data`: histograms of Av, but with one (or more) different cuts on chi2
+
 
 
 *****************
