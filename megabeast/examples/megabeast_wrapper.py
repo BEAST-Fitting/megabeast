@@ -12,6 +12,7 @@ import numpy as np
 
 # MegaBEAST imports
 from megabeast import megabeast
+from megabeast import plot_input_data
 
 import pdb
 
@@ -53,7 +54,7 @@ def megabeast_wrapper(megabeast_input_file, run_megabeast=False, diagnostic_plot
         print('Creating diagnostic plots')
         print('*************************\n')
 
-        print('-> NOT YET IMPLEMENTED!')
+        plot_input_data.plot_input_data(megabeast_input_file, chi2_plot=[10])
 
 
 
