@@ -60,7 +60,7 @@ def read_lnp_data(filename, nstars):
 def read_beast_data(filename,
                     noise_filename,
                     beast_params=['Av', 'Rv', 'f_A',
-                                  'M_ini', 'logA', 'Z',
+                                  'M_ini', 'logA', 'Z', 'distance',
                                   'completeness'],
                     verbose=True):
     """
@@ -76,7 +76,7 @@ def read_beast_data(filename,
 
     beast_params: strings
        contains the set of BEAST parameters to extract
-       default = [completeness, Av, Rv, f_A, M_ini, logA, Z]
+       default = [completeness, Av, Rv, f_A, M_ini, logA, Z, distance]
 
     Returns
     -------
