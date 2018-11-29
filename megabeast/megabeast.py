@@ -76,13 +76,13 @@ def megabeast(megabeast_input_file, verbose=True):
 
                 # get the completeness and BEAST model parameters for the
                 #   same grid points as the sparse likelihoods
-                beast_on_lnp = extract_beast_data(beast_data, lnp_data)
+                lnp_grid_vals = extract_beast_data(beast_data, lnp_data)
 
                 # initialize the ensemble model with the parameters used
                 # for the saved BEAST model run results
                 #   currently only dust parameters allowed
                 #   for testing -> only Av
-                avs = beast_on_lnp['Av']
+                avs = lnp_grid_vals['Av']
                 rvs = [3.1]#beast_data['Rv']
                 fAs = [1.0]#beast_data['f_A']
                 dustpriors = PriorWeightsDust(avs, mb_settings['av_prior_model'],
@@ -94,7 +94,7 @@ def megabeast(megabeast_input_file, verbose=True):
                 N12_init = 0.5*nstars_image[i,j]
                 result = op.minimize(chi2,
                                      [0.1,0.7,0.5,0.5,N12_init,N12_init],
-                                     args=(dustpriors, lnp_data, beast_on_lnp),
+                                     args=(dustpriors, lnp_data, lnp_grid_vals),
                                      method='Nelder-Mead')
                 best_fit_images[i,j,:] = result['x']
                 #print(result)

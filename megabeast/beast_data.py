@@ -119,7 +119,7 @@ def extract_beast_data(beast_data, lnp_data):
 
     Returns
     -------
-    beast_on_lnp: dictonary
+    lnp_grid_vals: dictonary
        contains arrays of the beast parameters and priors for the sparse
        lnp saved model grid points
     """
@@ -127,16 +127,16 @@ def extract_beast_data(beast_data, lnp_data):
     beast_params = beast_data.keys()
 
     # setup the output
-    beast_on_lnp = {}
+    lnp_grid_vals = {}
     n_lnps, n_stars = lnp_data['indxs'].shape
     for cparam in beast_params:
-        beast_on_lnp[cparam] = np.empty((n_lnps, n_stars), dtype=float)
+        lnp_grid_vals[cparam] = np.empty((n_lnps, n_stars), dtype=float)
 
     # loop over the stars and extract the requested BEAST data
     # for k in tqdm(range(n_stars), desc='extracting beast data'):
     for k in range(n_stars):
         for cparam in beast_params:
-            beast_on_lnp[cparam][:, k] = \
+            lnp_grid_vals[cparam][:, k] = \
                             beast_data[cparam][lnp_data['indxs'][:, k]]
 
-    return beast_on_lnp
+    return lnp_grid_vals

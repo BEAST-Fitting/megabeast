@@ -87,7 +87,7 @@ def _two_lognorm(xs,
     return pointwise
 
 
-def lnlike(phi, model_weights, lnp_data, beast_on_lnp):
+def lnlike(phi, model_weights, lnp_data, lnp_grid_vals):
     """
     Compute the log(likelihood) for the ensemble parameters
 
@@ -102,7 +102,7 @@ def lnlike(phi, model_weights, lnp_data, beast_on_lnp):
     lnp_data: dictonary
        contains arrays of the lnp values and indexs to the BEAST model grid
 
-    beast_on_lnp: dictonary
+    lnp_grid_vals: dictonary
        contains arrays of the beast parameters and priors for the sparse
        lnp saved model grid points
 
@@ -135,7 +135,7 @@ def lnlike(phi, model_weights, lnp_data, beast_on_lnp):
     # compute the each star's integrated probability that it fits the new model
     # including the completeness function
     star_probs = np.sum(weight_ratio
-                        * beast_on_lnp['completeness']
+                        * lnp_grid_vals['completeness']
                         * np.exp(lnp_data['vals']), axis=0)
 
     # remove any results that have zero integrated probabilities
@@ -144,7 +144,7 @@ def lnlike(phi, model_weights, lnp_data, beast_on_lnp):
 
     # print(np.sum(new_prior,axis=0))
     # print(np.sum(np.exp(lnp_data['vals']),axis=0))
-    # print(np.sum(beast_on_lnp['completeness'],axis=0))
+    # print(np.sum(lnp_grid_vals['completeness'],axis=0))
     # print(star_probs)
     # print('---')
     # print(star_probs[indxs])
@@ -187,7 +187,7 @@ def lnprior(phi):
         return -np.inf
 
 
-def lnprob(phi, model_weights, lnp_data, beast_on_lnp):
+def lnprob(phi, model_weights, lnp_data, lnp_grid_vals):
     """
     Compute the log(likelihood) for the ensemble parameters
 
@@ -202,7 +202,7 @@ def lnprob(phi, model_weights, lnp_data, beast_on_lnp):
     lnp_data: dictonary
        contains arrays of the lnp values and indexs to the BEAST model grid
 
-    beast_on_lnp: dictonary
+    lnp_grid_vals: dictonary
        contains arrays of the beast parameters and priors for the sparse
        lnp saved model grid points
 
@@ -214,4 +214,4 @@ def lnprob(phi, model_weights, lnp_data, beast_on_lnp):
 
     if not np.isfinite(ln_prior):
         return -np.inf
-    return ln_prior + lnlike(phi, model_weights, lnp_data, beast_on_lnp)
+    return ln_prior + lnlike(phi, model_weights, lnp_data, lnp_grid_vals)
