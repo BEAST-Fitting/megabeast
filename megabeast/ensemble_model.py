@@ -87,7 +87,7 @@ def _two_lognorm(xs,
     return pointwise
 
 
-def lnlike(phi, model_weights, lnp_data, lnp_grid_vals):
+def lnlike(phi, beast_dust_priors, lnp_data, lnp_grid_vals):
     """
     Compute the log(likelihood) for the ensemble parameters
 
@@ -96,7 +96,7 @@ def lnlike(phi, model_weights, lnp_data, lnp_grid_vals):
     phi: floats
        ensemble parameters
 
-    model_weights: PriorWeightsDust object
+    beast_dust_priors: PriorWeightsDust object
        contains the data and functions for the dust ensemble model
 
     lnp_data: dictonary
@@ -116,10 +116,10 @@ def lnlike(phi, model_weights, lnp_data, lnp_grid_vals):
     # compute the ensemble model for all the model grid points for all stars
     #   temp code for development
     #   will change to using the PriorWeightsDust for production
-    n_lnps, n_stars = model_weights.av_vals.shape
-    new_prior = np.empty(model_weights.av_vals.shape, dtype=float)
+    n_lnps, n_stars = beast_dust_priors.av_vals.shape
+    new_prior = np.empty(beast_dust_priors.av_vals.shape, dtype=float)
     for k in range(n_stars):
-        new_prior[:, k] = _two_lognorm(model_weights.av_vals[:, k],
+        new_prior[:, k] = _two_lognorm(beast_dust_priors.av_vals[:, k],
                                        max_pos1, max_pos2,
                                        sigma1=sigma1, sigma2=sigma2,
                                        N1=N1, N2=N2)
@@ -130,7 +130,7 @@ def lnlike(phi, model_weights, lnp_data, lnp_grid_vals):
     # weights are those that adjust the saved likelihoods for the new
     # ensemble model (ensemble "priors")
     #   save as log to allow easy summing later
-    weight_ratio = new_prior/model_weights.av_priors
+    weight_ratio = new_prior/beast_dust_priors.av_priors
 
     # compute the each star's integrated probability that it fits the new model
     # including the completeness function
@@ -187,7 +187,7 @@ def lnprior(phi):
         return -np.inf
 
 
-def lnprob(phi, model_weights, lnp_data, lnp_grid_vals):
+def lnprob(phi, beast_dust_priors, lnp_data, lnp_grid_vals):
     """
     Compute the log(likelihood) for the ensemble parameters
 
@@ -196,7 +196,7 @@ def lnprob(phi, model_weights, lnp_data, lnp_grid_vals):
     phi: floats
        ensemble parameters
 
-    model_weights: PriorWeightsDust object
+    beast_dust_priors: PriorWeightsDust object
        contains the data and functions for the dust ensemble model
 
     lnp_data: dictonary
@@ -214,4 +214,4 @@ def lnprob(phi, model_weights, lnp_data, lnp_grid_vals):
 
     if not np.isfinite(ln_prior):
         return -np.inf
-    return ln_prior + lnlike(phi, model_weights, lnp_data, lnp_grid_vals)
+    return ln_prior + lnlike(phi, beast_dust_priors, lnp_data, lnp_grid_vals)

@@ -85,16 +85,16 @@ def megabeast(megabeast_input_file, verbose=True):
                 avs = lnp_grid_vals['Av']
                 rvs = [3.1]#beast_data['Rv']
                 fAs = [1.0]#beast_data['f_A']
-                dustpriors = PriorWeightsDust(avs, mb_settings['av_prior_model'],
-                                              rvs, mb_settings['rv_prior_model'],
-                                              fAs, mb_settings['fA_prior_model'])
+                beast_dust_priors = PriorWeightsDust(avs, mb_settings['av_prior_model'],
+                                                rvs, mb_settings['rv_prior_model'],
+                                                fAs, mb_settings['fA_prior_model'])
 
                 # standard minimization to find initial values
                 chi2 = lambda * args: -1.0*lnprob(*args)
                 N12_init = 0.5*nstars_image[i,j]
                 result = op.minimize(chi2,
                                      [0.1,0.7,0.5,0.5,N12_init,N12_init],
-                                     args=(dustpriors, lnp_data, lnp_grid_vals),
+                                     args=(beast_dust_priors, lnp_data, lnp_grid_vals),
                                      method='Nelder-Mead')
                 best_fit_images[i,j,:] = result['x']
                 #print(result)
