@@ -89,11 +89,11 @@ def plot_input_data(megabeast_input_file, chi2_plot=[]):
 
                 # get the completeness and BEAST model parameters for the
                 #   same grid points as the sparse likelihoods
-                beast_on_lnp = extract_beast_data(beast_data, lnp_data)
+                lnp_grid_vals = extract_beast_data(beast_data, lnp_data)
                 
                 # grab the things we want to plot
-                plot_av = beast_on_lnp['Av']
-                plot_comp = beast_on_lnp['completeness']
+                plot_av = lnp_grid_vals['Av']
+                plot_comp = lnp_grid_vals['completeness']
  
                 for n in range(nstars_image[i,j]):
 
