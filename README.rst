@@ -28,8 +28,8 @@ This model uses the results of the
 to determine ensemble properties including dust grain properties.
 More detail to be added when the megaBEAST development matures.
 
-Documenation
-------------
+Documentation
+-------------
 
 Details of installing, running, and contributing to the megaBEAST are at
 <http://megabeast.readthedocs.io>.
@@ -74,6 +74,5 @@ more information.
 
 .. _AstroPy: http://www.astropy.org/
 .. _contributing: http://docs.astropy.org/en/stable/index.html#contributing
-.. _developer: http://docs.astropy.org/en/stable/index.html#developer-documentat
-ion
+.. _developer: http://docs.astropy.org/en/stable/index.html#developer-documentation
 .. _Astropy Code of Conduct:  http://www.astropy.org/about.html#codeofconduct
