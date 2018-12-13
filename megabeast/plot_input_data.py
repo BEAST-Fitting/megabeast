@@ -152,7 +152,6 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
         uniq_av = np.unique(flat_av)
         gap = np.min(np.diff(uniq_av))
         bins = np.arange(uniq_av[0], uniq_av[-1], gap)
-        pdb.set_trace()
     if log_scale:
         uniq_av = np.unique(np.log10(flat_av))
         gap = (uniq_av[-1] - uniq_av[0])/len(uniq_av)
@@ -174,11 +173,11 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                     if not log_scale:
                         h = plt.hist(best_av[i][j], bins=bins.size,
                                         range=(uniq_av[0]-gap/2, uniq_av[-1]+gap/2),
-                                        color='xkcd:azure')
+                                        facecolor='xkcd:azure', linewidth=0.25, edgecolor='xkcd:azure')
                     if log_scale:
                         h = plt.hist(np.log10(best_av[i][j]), bins=bins.size,
                                         range=(uniq_av[0]-gap/2, uniq_av[-1]+gap/2),
-                                        color='xkcd:azure')
+                                        facecolor='xkcd:azure', linewidth=0.25, edgecolor='xkcd:azure')
                     #plt.xlim(xmax=max_av)
                     #pdb.set_trace()
 
@@ -216,11 +215,14 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
 
                     # make a histogram
                     if best_av[i][j] != []:
-                        plot_av = np.array(best_av[i][j])[np.array(best_av_chi2[i][j]) < chi2_cut]
+                        if not log_scale:
+                            plot_av = np.array(best_av[i][j])[np.array(best_av_chi2[i][j]) < chi2_cut]
+                        if log_scale:
+                            plot_av = np.log10(np.array(best_av[i][j])[np.array(best_av_chi2[i][j]) < chi2_cut])
                         if len(plot_av) != 0:
                             h = plt.hist(plot_av, bins=bins.size,
                                             range=(uniq_av[0]-gap/2, uniq_av[-1]+gap/2),
-                                            color='xkcd:azure')
+                                            facecolor='xkcd:azure', linewidth=0.25, edgecolor='xkcd:azure')
 
 
         plt.suptitle(r'Best-fit $A_V$ for each pixel, but only using sources with $\chi^2 < $' + str(chi2_cut),
