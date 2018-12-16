@@ -21,7 +21,7 @@ from .ensemble_model import lnprob, _two_lognorm
 import pdb
 
 
-def plot_input_data(megabeast_input_file, chi2_plot=[]):
+def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     """
     Parameters
     ----------
@@ -30,6 +30,10 @@ def plot_input_data(megabeast_input_file, chi2_plot=[]):
 
     chi2_plot : list of floats (default=[])
         Make A_V histogram(s) with chi2 less than each of the values in this list
+
+    log_scale : boolean (default=False)
+        If True, make the histogram x-axis a log scale (to visualize log-normal
+        A_V distribution)
  
     """
 
@@ -55,7 +59,10 @@ def plot_input_data(megabeast_input_file, chi2_plot=[]):
 
     
     # set up multi-page figure
-    pp = PdfPages('{0}_megabeast/plot_input_data.pdf'.format(projectname))
+    if not log_scale:
+        pp = PdfPages('{0}_megabeast/plot_input_data.pdf'.format(projectname))
+    if log_scale:
+        pp = PdfPages('{0}_megabeast/plot_input_data_log.pdf'.format(projectname))
 
     # save the best-fit A_V
     best_av = [[ [] for j in range(x_dimen)] for i in range(y_dimen)]
@@ -141,9 +148,15 @@ def plot_input_data(megabeast_input_file, chi2_plot=[]):
     # grab the max A_V of all of them
     max_av = max(flat_av)
     # define bins
-    uniq_av = np.unique(flat_av)
-    gap = np.min(np.diff(uniq_av))
-    bins = np.arange(uniq_av[0], uniq_av[-1], gap)
+    if not log_scale:
+        uniq_av = np.unique(flat_av)
+        gap = np.min(np.diff(uniq_av))
+        bins = np.arange(uniq_av[0], uniq_av[-1], gap)
+    if log_scale:
+        uniq_av = np.unique(np.log10(flat_av))
+        gap = (uniq_av[-1] - uniq_av[0])/len(uniq_av)
+        bins = np.arange(uniq_av[0], uniq_av[-1], gap)
+       
     
     for i in tqdm(range(y_dimen), desc='y pixels'):
         for j in tqdm(range(x_dimen), desc='x pixels'):
@@ -157,9 +170,14 @@ def plot_input_data(megabeast_input_file, chi2_plot=[]):
 
                 # make a histogram
                 if best_av[i][j] != []:
-                    h = plt.hist(best_av[i][j], bins=bins.size,
-                                     range=(uniq_av[0]-gap/2, uniq_av[-1]+gap/2),
-                                     color='xkcd:azure')
+                    if not log_scale:
+                        h = plt.hist(best_av[i][j], bins=bins.size,
+                                        range=(uniq_av[0]-gap/2, uniq_av[-1]+gap/2),
+                                        facecolor='xkcd:azure', linewidth=0.25, edgecolor='xkcd:azure')
+                    if log_scale:
+                        h = plt.hist(np.log10(best_av[i][j]), bins=bins.size,
+                                        range=(uniq_av[0]-gap/2, uniq_av[-1]+gap/2),
+                                        facecolor='xkcd:azure', linewidth=0.25, edgecolor='xkcd:azure')
                     #plt.xlim(xmax=max_av)
                     #pdb.set_trace()
 
@@ -197,11 +215,14 @@ def plot_input_data(megabeast_input_file, chi2_plot=[]):
 
                     # make a histogram
                     if best_av[i][j] != []:
-                        plot_av = np.array(best_av[i][j])[np.array(best_av_chi2[i][j]) < chi2_cut]
+                        if not log_scale:
+                            plot_av = np.array(best_av[i][j])[np.array(best_av_chi2[i][j]) < chi2_cut]
+                        if log_scale:
+                            plot_av = np.log10(np.array(best_av[i][j])[np.array(best_av_chi2[i][j]) < chi2_cut])
                         if len(plot_av) != 0:
                             h = plt.hist(plot_av, bins=bins.size,
                                             range=(uniq_av[0]-gap/2, uniq_av[-1]+gap/2),
-                                            color='xkcd:azure')
+                                            facecolor='xkcd:azure', linewidth=0.25, edgecolor='xkcd:azure')
 
 
         plt.suptitle(r'Best-fit $A_V$ for each pixel, but only using sources with $\chi^2 < $' + str(chi2_cut),

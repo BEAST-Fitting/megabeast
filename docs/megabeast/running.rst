@@ -97,7 +97,7 @@ above) and run code to create diagnostic plots.
 If the diagnostic plots are made, it will create a PDF file with two (or more) plots:
 
   * completeness vs Av, which evaluates how well that stars with a given Av are recovered
-  * histograms of Av within each of the spatially-reorganized pixels
+  * histograms of Av (optionally log spaced) within each of the spatially-reorganized pixels
   * if `chi2_plot` is set for `plot_input_data`: histograms of Av, but with one (or more) different cuts on chi2
 
 
