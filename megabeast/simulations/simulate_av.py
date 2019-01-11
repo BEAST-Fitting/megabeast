@@ -23,6 +23,7 @@ import pdb
 def simulate_av(beast_seds_filename,
                     av_lognorm,
                     output_label,
+                    av_lognorm2=None,
                     image_dimen=[10,10],
                     nstar_per_pix=50):
     """
@@ -38,6 +39,9 @@ def simulate_av(beast_seds_filename,
 
     output_label : string
         label to use for folders and file names
+
+    av_lognorm2 : dict (default=None)
+        if set (identical formatting to av_lognorm), makes A_V a double lognormal distribution
 
     image_dimen : list of ints (default=[10,10])
         dimensions (nx by ny) of the fake image
@@ -67,7 +71,8 @@ def simulate_av(beast_seds_filename,
     for f in glob.glob('./'+output_label+'/'+output_label+'_*_*_lnp.hd5'):
         os.remove(f)
     # - now make new ones
-    setup_lnp_files(nstars_hdu, av_lognorm, beast_av_list, np.array(beast_av_ind), output_label)
+    setup_lnp_files(nstars_hdu, av_lognorm, beast_av_list, np.array(beast_av_ind),
+                        output_label, av_lognorm2=av_lognorm2)
 
     # create a noise file (currently all stars get completeness=1)
     setup_noise_file(sed_grid_length, output_label)
@@ -150,7 +155,7 @@ def setup_noise_file(sed_grid_length, output_label):
 
         
     
-def setup_lnp_files(nstars_hdu, av_lognorm, av_gridpoints, av_ind, output_label):
+def setup_lnp_files(nstars_hdu, av_lognorm, av_gridpoints, av_ind, output_label, av_lognorm2=None):
     """
     Create sparsely sampled lnp files for each pixel
 
@@ -171,6 +176,9 @@ def setup_lnp_files(nstars_hdu, av_lognorm, av_gridpoints, av_ind, output_label)
     output_label : string
         label to use for folders and file names
     
+    av_lognorm2 : dict (default=None)
+        if set (identical formatting to av_lognorm), makes A_V a double lognormal distribution
+
     """
 
     # dimensions of image
@@ -179,6 +187,9 @@ def setup_lnp_files(nstars_hdu, av_lognorm, av_gridpoints, av_ind, output_label)
     # create a lognormal distribution
     av_dist = np.linspace(av_gridpoints[0], av_gridpoints[-1], 500)
     temp = _lognorm(av_dist, av_lognorm['max_pos'], sigma=av_lognorm['sigma'], N=av_lognorm['N'])
+    if av_lognorm2 is not None:
+        temp2 = _lognorm(av_dist, av_lognorm2['max_pos'], sigma=av_lognorm2['sigma'], N=av_lognorm2['N'])
+        temp += temp2
     lognorm_dist = temp / np.sum(temp)
     lognorm_cdf = np.cumsum(lognorm_dist)
 
