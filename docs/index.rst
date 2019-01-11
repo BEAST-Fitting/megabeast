@@ -16,6 +16,7 @@ User Documentation
 
    Motivation and Goals <megabeast/goals.rst>
    How to run <megabeast/running.rst>
+   Creating simulated data <megabeast/simulate.rst>
 
 Installation
 ============
