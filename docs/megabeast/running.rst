@@ -109,7 +109,18 @@ MegaBEAST outputs
 The results of the MegaBEAST are the best fit values for the ensemble model
 for the A(V) distribution.  Currently, only the A(V) ensemble model is
 implemented.  The output filenames have the format
-projectname_param_bestfit.fits where the allowed values of param are
-N1, N2, AV1, AV2, sigma1, and sigma2.  There are two lognormal components in
-the A(V) ensemble model where the lognormal paramters are N (number of stars),
-AV (peak A(V)), and sigma (width of lognormal).
+`projectname_param_bestfit.fits` where the allowed values of param are
+`AV1`, `AV2`, `sigma1`, `sigma2`, and `N12_ratio`.  There are two lognormal components in
+the A(V) ensemble model where the lognormal parameters are N (number of stars),
+AV (A(V) at the peak of the distribution), and sigma (width of lognormal).
+The MegaBEAST does not fit for the total number of stars, so only the the ratio between
+the normalizations of the two lognormals (`N12_ratio`) is fit.
+
+Maps of the best fit parameters can be created with `parameter_maps.py`.  The optional
+input `n_col` (default is 2) sets the number of columns of plots to put on the page.
+
+.. code-block:: shell
+
+  >>> from parameter_maps import parameter_maps 
+  >>> parameter_maps('megabeast_input.txt', n_col=2)
+ 
