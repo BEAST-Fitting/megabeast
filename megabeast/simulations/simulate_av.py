@@ -119,7 +119,7 @@ def setup_mb_input(beast_seds_filename, output_label):
                       'projectname = '+output_label,
                       '',
                       '# parameters for the megabeast to fit',
-                      "fit_param_names = ['Av1', 'Av2', 'sigma1', 'sigma2', 'N1', 'N2']",
+                      "fit_param_names = ['Av1', 'Av2', 'sigma1', 'sigma2', 'N12_ratio']",
                       '',
                       '# minimum number of stars need in a pixel for fit',
                       'min_for_fit = 20',

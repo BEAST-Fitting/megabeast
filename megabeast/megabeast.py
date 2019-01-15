@@ -91,9 +91,8 @@ def megabeast(megabeast_input_file, verbose=True):
 
                 # standard minimization to find initial values
                 chi2 = lambda * args: -1.0*lnprob(*args)
-                N12_init = 0.5*nstars_image[i,j]
                 result = op.minimize(chi2,
-                                     [0.1,0.7,0.5,0.5,N12_init,N12_init],
+                                     [0.25,2.0, 0.5,0.5, 1],
                                      args=(beast_dust_priors, lnp_data, lnp_grid_vals),
                                      method='Nelder-Mead')
                 best_fit_images[i,j,:] = result['x']
