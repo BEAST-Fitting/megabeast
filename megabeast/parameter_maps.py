@@ -1,6 +1,5 @@
 # system
 from __future__ import (absolute_import, division, print_function)
-import argparse
 
 # other packages
 import numpy as np
@@ -11,7 +10,6 @@ from astropy.io import fits
 # megabeast
 from .read_megabeast_input import read_megabeast_input
 
-import pdb
 
 
 def parameter_maps(megabeast_input_file, n_col=2):
@@ -59,11 +57,11 @@ def parameter_maps(megabeast_input_file, n_col=2):
 
         # subplot info
         # - current column and row
-        col_num = p % n_col
-        row_num = p // n_col
+        #col_num = p % n_col
+        #row_num = p // n_col
         # - corresponding dimensions
-        subplot_dimen = [1/n_col * col_num, 1-(1/n_row * (row_num+1)),
-                             1/n_col * (col_num+1), 1-(1/n_row * row_num)]
+        #subplot_dimen = [1/n_col * col_num, 1-(1/n_row * (row_num+1)),
+        #                     1/n_col * (col_num+1), 1-(1/n_row * row_num)]
         #print('p='+str(p)+' col_num='+str(col_num)+' row_num='+str(row_num))
         #print(subplot_dimen)
 

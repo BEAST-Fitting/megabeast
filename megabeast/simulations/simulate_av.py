@@ -1,11 +1,9 @@
 # system
 from __future__ import (absolute_import, division, print_function)
-import argparse
 import os
 import glob
 
 # other packages
-from tqdm import (tqdm, trange)
 import numpy as np
 import scipy.stats
 from astropy.io import fits
@@ -16,8 +14,6 @@ from astropy import wcs
 from beast.physicsmodel.prior_weights_dust import _lognorm
 from beast.fitting.fit import save_lnp
 
-
-import pdb
 
 
 def simulate_av(beast_seds_filename,
@@ -220,7 +216,7 @@ def setup_lnp_files(nstars_hdu, av_lognorm, av_gridpoints, av_ind, output_label,
                 lnp = np.log(prob_list)
                 chi2 = lnp / (-0.5)
                 sed = [99]
-                lnp_save_list.append([star_num, av_ind, lnp, chi2, sed])
+                lnp_save_list.append([star_num, idx, lnp, chi2, sed])
 
             # save the lnp data
             #print('i='+str(i)+' j='+str(j)+' nstar='+str(nstar)+' len(lnp_list)='+str(len(lnp_save_list)))
