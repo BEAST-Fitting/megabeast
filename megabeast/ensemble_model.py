@@ -122,7 +122,8 @@ def lnlike(phi, beast_dust_priors, lnp_data, lnp_grid_vals):
         new_prior[:, k] = _two_lognorm(beast_dust_priors.av_vals[:, k],
                                        max_pos1, max_pos2,
                                        sigma1=sigma1, sigma2=sigma2,
-                                       N1=N12_ratio, N2=1)
+                                       N1=1 - 1/(N12_ratio+1),
+                                       N2=1/(N12_ratio+1))
         if not np.isfinite(np.sum(new_prior[:, k])):
             print(new_prior[:, k])
             exit()
@@ -180,7 +181,7 @@ def lnprior(phi):
             and 0 <= max_pos1 < 2
             and 0 <= max_pos2 < 3
             and max_pos1 < max_pos2
-            and N12_ratio > 0):
+            and 0.01 < N12_ratio < 100):
         return 0.0
     else:
         return -np.inf
