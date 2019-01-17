@@ -32,27 +32,37 @@ This creates the simulated files, runs the MegaBEAST, and makes plots.
 
 .. code-block:: shell
 
-  >>> from simulate_av import simulate_av
-  >>> from megabeast import megabeast
-  >>> from plot_input_data import plot_input_data
+  >>> from megabeast.simulations.simulate_av import simulate_av
+  >>> from megabeast.simulations.simulate_av_plots import simulate_av_plots
+  >>> from megabeast.megabeast import megabeast
+  >>> from megabeast.plot_input_data import plot_input_data
+  >>> from megabeast.parameter_maps import parameter_maps
+  >>> 
   >>> simulate_av('someproject_beast_seds.grid.hd5',
-                  {'max_pos':1, 'sigma':0.5, 'N':500},
+                  {'max_pos':0.5, 'sigma':0.5, 'N':500},
 		  'mb-simulation',
 		  image_dimen=[8,10],
 		  nstar_per_pix=50)
   >>> megabeast('megabeast_input_mb-simulation.txt')
   >>> plot_input_data('megabeast_input_mb-simulation.txt', log_scale=True)
+  >>> simulate_av_plots('megabeast_input_mb-simulation.txt', log_scale=False,
+                        input_lognormal={'max_pos':0.5, 'sigma':0.5, 'N':500})
+  >>> parameter_maps('megabeast_input_mb-simulation.txt', n_col=2)
 
 This is the same as above, but instead draws A_V from a double lognormal distribution.
 
 .. code-block:: shell
 
   >>> simulate_av('someproject_beast_seds.grid.hd5',
-                  {'max_pos':1, 'sigma':0.5, 'N':500},
+                  {'max_pos':0.5, 'sigma':0.5, 'N':500},
 		  'mb-simulation2',
-		  av_lognorm2={'max_pos':4, 'sigma':0.5, 'N':500}
+		  av_lognorm2={'max_pos':2, 'sigma':0.5, 'N':500}
 		  image_dimen=[8,10],
 		  nstar_per_pix=50)
   >>> megabeast('megabeast_input_mb-simulation2.txt')
   >>> plot_input_data('megabeast_input_mb-simulation2.txt', log_scale=True)
+  >>> simulate_av_plots('megabeast_input_mb-simulation2.txt', log_scale=False,
+                        input_lognormal={'max_pos':0.5, 'sigma':0.5, 'N':500},
+			input_lognormal2={'max_pos':2, 'sigma':0.5, 'N':500})
+  >>> parameter_maps('megabeast_input_mb-simulation2.txt', n_col=2)
 
