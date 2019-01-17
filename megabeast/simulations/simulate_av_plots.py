@@ -1,25 +1,19 @@
 # system
 from __future__ import (absolute_import, division, print_function)
-import argparse
 
 # other packages
 from tqdm import (tqdm, trange)
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 from astropy.io import fits
 
 # beast
-from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+from beast.physicsmodel.prior_weights_dust import _lognorm, _two_lognorm
 
 # megabeast
 from ..read_megabeast_input import read_megabeast_input
-from ..beast_data import (read_beast_data, extract_beast_data,
-                        read_lnp_data)
-from ..ensemble_model import lnprob, _lognorm, _two_lognorm
-
-import pdb
+from ..beast_data import (read_beast_data, read_lnp_data)
 
 
 
@@ -120,20 +114,17 @@ def simulate_av_plots(megabeast_input_file, log_scale=False,
                     best_val_ind = np.where(vals == np.max(vals))[0][0]
                     best_av.append(beast_data['Av'][inds[best_val_ind]])
                 best_av = np.array(best_av)
-                #pdb.set_trace()
                 
 
                 # stack up some representation of what's being maximized in ensemble_model.py
                 prob_stack = np.sum(lnp_comp * np.exp(lnp_vals), axis=1)
 
                 # normalize it (since it's not clear what the numbers mean anyway)
-                #pdb.set_trace()
                 #prob_stack = prob_stack / np.sum(prob_stack)
                 prob_stack = prob_stack / np.trapz(prob_stack, av_grid)
 
                 ## stack up the probabilities at each A_V
                 #prob_stack = np.sum(np.exp(lnp_vals), axis=1)
-                #pdb.set_trace()
 
                 # set up the subplot
                 plt.subplot(y_dimen, x_dimen, (y_dimen-i-1)*(x_dimen) + j + 1)
