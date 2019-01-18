@@ -91,7 +91,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
             if nstars_image[i,j] > 20:
 
                 # get info about the fits
-                lnp_filename = "%s_beast/spatial/%s_%i_%i_lnp.hd5"%(projectname,projectname, j, i)
+                lnp_filename = mb_settings['lnp_file_prefix']+"_%i_%i_lnp.hd5"%(j, i)
                 lnp_data = read_lnp_data(lnp_filename, nstars_image[i,j])
 
                 # get the completeness and BEAST model parameters for the

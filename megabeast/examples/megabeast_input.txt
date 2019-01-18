@@ -28,7 +28,7 @@ lnp_file_prefix = ./14675_LMC-5665ne-12232_beast/spatial/14675_LMC-5665ne-12232
 projectname = 14675_LMC-5665ne-12232
 
 # parameters for the megabeast to fit
-fit_param_names = ['Av1', 'Av2', 'sigma1', 'sigma2', 'N1', 'N2']
+fit_param_names = ['Av1', 'Av2', 'sigma1', 'sigma2', 'N12_ratio']
 
 # minimum number of stars need in a pixel for fit
 min_for_fit = 20

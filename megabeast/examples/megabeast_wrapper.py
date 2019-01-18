@@ -13,6 +13,7 @@ import numpy as np
 # MegaBEAST imports
 from megabeast import megabeast
 from megabeast import plot_input_data
+from megabeast import parameter_maps
 
 import pdb
 
@@ -45,6 +46,8 @@ def megabeast_wrapper(megabeast_input_file, run_megabeast=False, diagnostic_plot
         print('*********************\n')
         
         megabeast.megabeast(megabeast_input_file, verbose=verbose)
+
+        parameter_maps.parameter_maps(megabeast_input_file)
 
 
     # create diagnostic plots
