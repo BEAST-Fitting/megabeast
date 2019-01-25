@@ -167,14 +167,15 @@ if __name__ == '__main__':
     master_header = wcs_info.to_header()
     # Now, write the maps to disk
     for k, cur_stat in enumerate(sum_stats):
+        map_name = stats_filename[0].replace('stats', 'map' + cur_stat)
         hdu = fits.PrimaryHDU(summary_stats[:, :, k],
                               header=master_header)
-        hdu.writeto(stats_filename[0].replace('stats', 'map' + cur_stat),
-                    overwrite=True)
+        hdu.writeto(map_name, overwrite=True)
+
+        sigma_name = map_name.replace('map', 'map_sigma')
         hdu_sigma = fits.PrimaryHDU(summary_sigmas[:, :, k],
                                     header=master_header)
-        hdu_sigma.writeto(stats_filename[0].replace('stats', 'map' + cur_stat + '_sigma'),
-                    overwrite=True)
+        hdu_sigma.writeto(sigma_name, overwrite=True)
 
     hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum],
                           header=master_header)
@@ -182,7 +183,9 @@ if __name__ == '__main__':
                 overwrite=True)
 
     # And store all the values in HDF5 format
-    f = h5py.File(stats_filename[0].replace('stats.fits', 'values_per_pixel.hd5'), 'w')
+    values_name = stats_filename[0].replace('stats.fits',
+                                            'values_per_pixel.hd5')
+    f = h5py.File(values_name, 'w')
     dt = h5py.special_dtype(vlen=np.dtype(np.float))
     for cur_stat in sum_stats:
         dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
