@@ -161,7 +161,7 @@ if __name__ == '__main__':
                 for k, cur_stat in enumerate(sum_stats):
                     values = cat[cur_stat + '_' + stat_type][tindxs]
                     values_foreach_pixel[cur_stat][i, j] = values
-                    summary_stats[j, i, k] = np.median(values)
+                    summary_stats[j, i, k] = np.average(values)
                     summary_sigmas[j, i, k] = np.std(values, ddof=1)
 
     master_header = wcs_info.to_header()
