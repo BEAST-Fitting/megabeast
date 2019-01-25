@@ -149,7 +149,7 @@ if __name__ == '__main__':
     summary_sigmas = np.zeros((n_y, n_x, n_sum), dtype=float)
     values_foreach_pixel = {cur_stat: {(i, j): [] for i in range(n_x) for j in range(n_y)}
                             for cur_stat in sum_stats}
-    
+
     # loop through the pixels and generate the summary stats
     for i in range(n_x):
         for j in range(n_y):
@@ -188,4 +188,3 @@ if __name__ == '__main__':
         dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
         for i, j in it.product(range(n_x), range(n_y)):
             dset[i, j] = values_foreach_pixel[cur_stat][i, j]
-
