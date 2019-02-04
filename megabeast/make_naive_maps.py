@@ -162,7 +162,7 @@ if __name__ == '__main__':
                     values = cat[cur_stat + '_' + stat_type][tindxs]
                     values_foreach_pixel[cur_stat][i, j] = values
                     summary_stats[j, i, k] = np.average(values)
-                    summary_sigmas[j, i, k] = np.std(values, ddof=1)
+                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
 
     master_header = wcs_info.to_header()
     # Now, write the maps to disk
