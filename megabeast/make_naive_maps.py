@@ -1,10 +1,9 @@
 import math
 
-from tqdm import trange, tqdm
-
 import argparse
 import numpy as np
-
+import h5py
+import itertools as it
 from astropy import wcs
 from astropy.io import fits
 from astropy.table import Table, vstack
@@ -147,6 +146,9 @@ if __name__ == '__main__':
     sum_stats = ['Av', 'Rv', 'f_A']
     n_sum = len(sum_stats)
     summary_stats = np.zeros((n_y, n_x, n_sum+1), dtype=float)
+    summary_sigmas = np.zeros((n_y, n_x, n_sum), dtype=float)
+    values_foreach_pixel = {cur_stat: {(i, j): [] for i in range(n_x) for j in range(n_y)}
+                            for cur_stat in sum_stats}
 
     # loop through the pixels and generate the summary stats
     for i in range(n_x):
@@ -157,18 +159,35 @@ if __name__ == '__main__':
                 summary_stats[j, i, n_sum] = len(tindxs)
                 print(i, j, len(tindxs))
                 for k, cur_stat in enumerate(sum_stats):
-                    summary_stats[j, i, k] = np.average(cat[cur_stat+'_'
-                                                        + stat_type][tindxs])
+                    values = cat[cur_stat + '_' + stat_type][tindxs]
+                    values_foreach_pixel[cur_stat][i, j] = values
+                    summary_stats[j, i, k] = np.average(values)
+                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
 
     master_header = wcs_info.to_header()
     # Now, write the maps to disk
     for k, cur_stat in enumerate(sum_stats):
+        map_name = stats_filename[0].replace('stats', 'map' + cur_stat)
         hdu = fits.PrimaryHDU(summary_stats[:, :, k],
                               header=master_header)
-        hdu.writeto(stats_filename[0].replace('stats', 'map' + cur_stat),
-                    overwrite=True)
+        hdu.writeto(map_name, overwrite=True)
+
+        sigma_name = map_name.replace('map', 'map_sigma')
+        hdu_sigma = fits.PrimaryHDU(summary_sigmas[:, :, k],
+                                    header=master_header)
+        hdu_sigma.writeto(sigma_name, overwrite=True)
 
     hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum],
                           header=master_header)
     hdu.writeto(stats_filename[0].replace('stats', 'npts'),
                 overwrite=True)
+
+    # And store all the values in HDF5 format
+    values_name = stats_filename[0].replace('stats.fits',
+                                            'values_per_pixel.hd5')
+    f = h5py.File(values_name, 'w')
+    dt = h5py.special_dtype(vlen=np.dtype(np.float))
+    for cur_stat in sum_stats:
+        dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
+        for i, j in it.product(range(n_x), range(n_y)):
+            dset[i, j] = values_foreach_pixel[cur_stat][i, j]
