@@ -9,7 +9,7 @@ from __future__ import (absolute_import, division, print_function)
 import numpy as np
 
 # beast imports
-from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+# from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 
 
 # temporary for development - remove and use PriorWeightsDust only
@@ -167,10 +167,10 @@ def lnprior(phi):
     phi: floats
        ensemble parameters
 
-    Returns:
-    --------
+    Returns
+    -------
     log(prior): floats
-       0         if allowed
+       0 if allowed
        -infinite if not allowed
     """
     # unpack ensemble parameters (Av only)
