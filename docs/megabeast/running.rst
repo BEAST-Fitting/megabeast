@@ -118,7 +118,7 @@ the normalizations of the two lognormals (`N12_ratio`) is fit.
 Maps of the best fit parameters can be created with `parameter_maps.py`.  The optional
 input `n_col` (default is 2) sets the number of columns of plots to put on the page.
 
-.. code-block:: pyton
+.. code-block:: python
 
   from parameter_maps import parameter_maps
   parameter_maps('megabeast_input.txt', n_col=2)
