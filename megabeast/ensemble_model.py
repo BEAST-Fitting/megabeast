@@ -167,10 +167,10 @@ def lnprior(phi):
     phi: floats
        ensemble parameters
 
-    Returns:
-    --------
+    Returns
+    -------
     log(prior): floats
-       0         if allowed
+       0 if allowed
        -infinite if not allowed
     """
     # unpack ensemble parameters (Av only)
