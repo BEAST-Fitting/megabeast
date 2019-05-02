@@ -36,10 +36,8 @@ except ImportError:
     sys.exit(1)
 
 # Get configuration information from setup.cfg
-try:
-    from ConfigParser import ConfigParser
-except ImportError:
-    from configparser import ConfigParser
+
+from configparser import ConfigParser
 conf = ConfigParser()
 
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
@@ -107,9 +105,8 @@ release = package.__version__
 #html_theme = None
 
 
-# Please update these texts to match the name of your package.
 html_theme_options = {
-    'logotext1': 'mega',  # white,  semi-bold
+    'logotext1': 'Mega',  # white,  semi-bold
     'logotext2': 'BEAST',  # orange, light
     'logotext3': ':docs'   # white,  light
     }
