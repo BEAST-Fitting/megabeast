@@ -9,3 +9,4 @@ numpy
 h5py
 scipy
 tqdm
+pytest
