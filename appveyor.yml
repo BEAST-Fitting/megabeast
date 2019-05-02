@@ -11,10 +11,10 @@ environment:
                         # of 32 bit and 64 bit builds are needed, move this
                         # to the matrix section.
 
-      
+
       # List runtime dependencies for the package that are available as conda
       # packages here.
-      CONDA_DEPENDENCIES: ""
+      CONDA_DEPENDENCIES: "scipy h5py tqdm"
 
       # List other runtime dependencies for the package that are available as
       # pip packages here.
