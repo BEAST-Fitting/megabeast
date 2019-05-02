@@ -101,7 +101,6 @@ If the diagnostic plots are made, it will create a PDF file with two (or more) p
   * if `chi2_plot` is set for `plot_input_data`: histograms of Av, but with one (or more) different cuts on chi2
 
 
-
 *****************
 MegaBEAST outputs
 *****************
@@ -119,8 +118,7 @@ the normalizations of the two lognormals (`N12_ratio`) is fit.
 Maps of the best fit parameters can be created with `parameter_maps.py`.  The optional
 input `n_col` (default is 2) sets the number of columns of plots to put on the page.
 
-.. code-block:: shell
+.. code-block:: pyton
 
-  >>> from parameter_maps import parameter_maps 
-  >>> parameter_maps('megabeast_input.txt', n_col=2)
- 
+  from parameter_maps import parameter_maps
+  parameter_maps('megabeast_input.txt', n_col=2)
