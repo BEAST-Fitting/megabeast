@@ -9,6 +9,101 @@ from astropy.io import fits
 from astropy.table import Table, vstack
 
 
+def make_maps(stats_filename, pix_size=10.):
+    """
+    Make the naive maps
+
+    Parameters
+    ----------
+    stats_filename : string or list of strings
+       name(s) of the catalog(s) of BEAST results
+
+    pix_size : float (default=10)
+       size of pixels/regions in arcsec
+
+    """
+
+    # type of statistic (make a commandline parameter later)
+    #   remember to add to output filenames
+    stat_type = 'Exp'
+
+    # read in the full brick catalog
+    if type(stats_filename) == str:
+        stats_filename = [stats_filename]
+    cat = Table.read(stats_filename[0])
+    if len(stats_filename) > 1:
+        for fname in stats_filename[1:]:
+            tcat = Table.read(fname)
+            cat = vstack([cat, tcat])
+
+    # generate the wcs info for the output FITS files
+    #    also provides the mapping info from ra,dec to x,y
+    wcs_info, n_x, n_y = setup_spatial_regions(cat,
+                                               pix_size=pix_size)
+
+    # get the pixel coordinates for each source
+    xy_vals = regions_for_objects(cat['RA'],
+                                  cat['DEC'],
+                                  wcs_info)
+
+    x = xy_vals['x']
+    y = xy_vals['y']
+
+    # setup arrary to store summary stats per pixel
+    n_sum = 2
+    sum_stats = ['Av', 'Rv', 'f_A']
+    n_sum = len(sum_stats)
+    summary_stats = np.zeros((n_y, n_x, n_sum+1), dtype=float)
+    summary_sigmas = np.zeros((n_y, n_x, n_sum), dtype=float)
+    values_foreach_pixel = {cur_stat: {(i, j): [] for i in range(n_x) for j in range(n_y)}
+                            for cur_stat in sum_stats}
+
+    # loop through the pixels and generate the summary stats
+    for i in range(n_x):
+        for j in range(n_y):
+            tindxs, = np.where((x == i) & (y == j))
+            # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
+            if len(tindxs) > 0:
+                summary_stats[j, i, n_sum] = len(tindxs)
+                print(i, j, len(tindxs))
+                for k, cur_stat in enumerate(sum_stats):
+                    values = cat[cur_stat + '_' + stat_type][tindxs]
+                    values_foreach_pixel[cur_stat][i, j] = values
+                    summary_stats[j, i, k] = np.average(values)
+                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
+
+    master_header = wcs_info.to_header()
+    # Now, write the maps to disk
+    for k, cur_stat in enumerate(sum_stats):
+        map_name = stats_filename[0].replace('stats', 'map' + cur_stat)
+        hdu = fits.PrimaryHDU(summary_stats[:, :, k],
+                              header=master_header)
+        hdu.writeto(map_name, overwrite=True)
+
+        sigma_name = map_name.replace('map', 'map_sigma')
+        hdu_sigma = fits.PrimaryHDU(summary_sigmas[:, :, k],
+                                    header=master_header)
+        hdu_sigma.writeto(sigma_name, overwrite=True)
+
+    hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum],
+                          header=master_header)
+    hdu.writeto(stats_filename[0].replace('stats', 'npts'),
+                overwrite=True)
+
+    # And store all the values in HDF5 format
+    values_name = stats_filename[0].replace('stats.fits',
+                                            'values_per_pixel.hd5')
+    f = h5py.File(values_name, 'w')
+    dt = h5py.special_dtype(vlen=np.dtype(np.float))
+    for cur_stat in sum_stats:
+        dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
+        for i, j in it.product(range(n_x), range(n_y)):
+            dset[i, j] = values_foreach_pixel[cur_stat][i, j]
+
+
+
+
+    
 def setup_spatial_regions(cat,
                           pix_size=10.0):
     """
@@ -115,79 +210,6 @@ if __name__ == '__main__':
                         help="pixel scale [arcsec]")
     args = parser.parse_args()
 
-    stats_filename = args.stats_filename
 
-    # type of statistic (make a commandline parameter later)
-    #   remember to add to output filenames
-    stat_type = 'Exp'
-
-    # read in the full brick catalog
-    cat = Table.read(stats_filename[0])
-    if len(stats_filename) > 0:
-        for fname in stats_filename[1:]:
-            tcat = Table.read(fname)
-            cat = vstack([cat, tcat])
-
-    # generate the wcs info for the output FITS files
-    #    also provides the mapping info from ra,dec to x,y
-    wcs_info, n_x, n_y = setup_spatial_regions(cat,
-                                               pix_size=args.pix_size)
-
-    # get the pixel coordinates for each source
-    xy_vals = regions_for_objects(cat['RA'],
-                                  cat['DEC'],
-                                  wcs_info)
-
-    x = xy_vals['x']
-    y = xy_vals['y']
-
-    # setup arrary to store summary stats per pixel
-    n_sum = 2
-    sum_stats = ['Av', 'Rv', 'f_A']
-    n_sum = len(sum_stats)
-    summary_stats = np.zeros((n_y, n_x, n_sum+1), dtype=float)
-    summary_sigmas = np.zeros((n_y, n_x, n_sum), dtype=float)
-    values_foreach_pixel = {cur_stat: {(i, j): [] for i in range(n_x) for j in range(n_y)}
-                            for cur_stat in sum_stats}
-
-    # loop through the pixels and generate the summary stats
-    for i in range(n_x):
-        for j in range(n_y):
-            tindxs, = np.where((x == i) & (y == j))
-            # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
-            if len(tindxs) > 0:
-                summary_stats[j, i, n_sum] = len(tindxs)
-                print(i, j, len(tindxs))
-                for k, cur_stat in enumerate(sum_stats):
-                    values = cat[cur_stat + '_' + stat_type][tindxs]
-                    values_foreach_pixel[cur_stat][i, j] = values
-                    summary_stats[j, i, k] = np.average(values)
-                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
-
-    master_header = wcs_info.to_header()
-    # Now, write the maps to disk
-    for k, cur_stat in enumerate(sum_stats):
-        map_name = stats_filename[0].replace('stats', 'map' + cur_stat)
-        hdu = fits.PrimaryHDU(summary_stats[:, :, k],
-                              header=master_header)
-        hdu.writeto(map_name, overwrite=True)
-
-        sigma_name = map_name.replace('map', 'map_sigma')
-        hdu_sigma = fits.PrimaryHDU(summary_sigmas[:, :, k],
-                                    header=master_header)
-        hdu_sigma.writeto(sigma_name, overwrite=True)
-
-    hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum],
-                          header=master_header)
-    hdu.writeto(stats_filename[0].replace('stats', 'npts'),
-                overwrite=True)
-
-    # And store all the values in HDF5 format
-    values_name = stats_filename[0].replace('stats.fits',
-                                            'values_per_pixel.hd5')
-    f = h5py.File(values_name, 'w')
-    dt = h5py.special_dtype(vlen=np.dtype(np.float))
-    for cur_stat in sum_stats:
-        dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
-        for i, j in it.product(range(n_x), range(n_y)):
-            dset[i, j] = values_foreach_pixel[cur_stat][i, j]
+    # call the function
+    make_maps(args.stats_filename, pix_size=args.pix_size)
