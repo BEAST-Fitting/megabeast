@@ -8,7 +8,11 @@ from astropy import wcs
 from astropy.io import fits
 from astropy.table import Table, vstack
 
-from beast.tools.create_background_density_map import calc_nx_ny_from_pixsize, make_wcs_for_map, get_pix_coords
+from beast.tools.create_background_density_map import (
+    calc_nx_ny_from_pixsize,
+    make_wcs_for_map,
+    get_pix_coords,
+)
 
 
 def make_maps(stats_filename, pix_size=10.):
@@ -38,7 +42,6 @@ def make_maps(stats_filename, pix_size=10.):
             tcat = Table.read(fname)
             cat = vstack([cat, tcat])
 
-        
     # make RA/Dec grid
     ra = cat['RA']
     dec = cat['DEC']
