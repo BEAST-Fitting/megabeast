@@ -8,151 +8,73 @@ from astropy import wcs
 from astropy.io import fits
 from astropy.table import Table, vstack
 
+from beast.tools.create_background_density_map import (
+    calc_nx_ny_from_pixsize,
+    make_wcs_for_map,
+    get_pix_coords,
+)
 
-def setup_spatial_regions(cat,
-                          pix_size=10.0):
+
+def make_maps(stats_filename, pix_size=10.):
     """
-    The spatial regions are setup via a WCS object
+    Make the naive maps
 
     Parameters
     ----------
-    cat : astropy Table
-       catalog of BEAST results
-    pix_size : float
+    stats_filename : string or list of strings
+       name(s) of the catalog(s) of BEAST results
+
+    pix_size : float (default=10)
        size of pixels/regions in arcsec
-    Returns
-    -------
-    wcs_info: astropy WCS object
+
     """
-
-    # min/max ra
-    min_ra = cat['RA'].min()
-    max_ra = cat['RA'].max()
-    min_dec = cat['DEC'].min()
-    max_dec = cat['DEC'].max()
-
-    # ra/dec delta values
-    dec_delt = pix_size/3600.
-    ra_delt = dec_delt
-
-    # compute the number of pixels and
-    n_y = int(np.rint((max_dec - min_dec)/dec_delt) + 1)
-    n_x = int(np.rint(math.cos(0.5*(max_dec+min_dec)*math.pi/180.)
-                      * (max_ra-min_ra)/ra_delt) + 1)
-
-    # ra delta should be negative
-    ra_delt *= -1.
-
-    print('# of x & y pixels = ', n_x, n_y)
-
-    w = wcs.WCS(naxis=2)
-    w.wcs.crpix = np.asarray([n_x, n_y], dtype=float) / 2.
-    w.wcs.cdelt = [ra_delt, dec_delt]
-    w.wcs.crval = np.asarray([(min_ra+max_ra), (min_dec+max_dec)]) / 2.
-    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-
-    return (w, n_x, n_y)
-
-
-def regions_for_objects(ra,
-                        dec,
-                        wcs_info):
-    """
-    Generate the x,y coordinates for each object based on the input
-    ra/dec and already created WCS information.
-
-    Parameters
-    ----------
-    ra : array of float
-       right ascension of the objects
-    dec : array of float
-       declination of the objects
-    wcs_info: astropy WCS object
-       previously generated WCS object based on the full catalog
-    Returns
-    -------
-    dictonary of:
-    x : int array
-      x values of regions
-    y : int array
-      y values of regions
-    name : str array
-      string array composed of x_y
-    """
-
-    # generate the array needed for fast conversion
-    world = np.empty((len(ra), 2), float)
-    world[:, 0] = ra
-    world[:, 1] = dec
-
-    # convert
-    pixcrd = wcs_info.wcs_world2pix(world, 1)
-
-    # get the arrays to return
-    x = pixcrd[:, 0].astype(int)
-    y = pixcrd[:, 1].astype(int)
-    xy_name = [None]*len(ra)
-
-    for k in range(len(x)):
-        xy_name[k] = str(x[k]) + '_' + str(y[k])
-
-    # return the results as a dictonary
-    #   values are truncated to provide the ids for the subregions
-    return {'x': x, 'y': y, 'name': xy_name}
-
-
-if __name__ == '__main__':
-
-    # command line params to specify the run directory
-    #   and any other needed parameters
-
-    # commandline parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument('stats_filename', metavar='fname',
-                        type=str, nargs='+',
-                        help="Filename(s) of the stats")
-    parser.add_argument("--pix_size", default=10., type=float,
-                        help="pixel scale [arcsec]")
-    args = parser.parse_args()
-
-    stats_filename = args.stats_filename
 
     # type of statistic (make a commandline parameter later)
     #   remember to add to output filenames
     stat_type = 'Exp'
 
     # read in the full brick catalog
+    if type(stats_filename) == str:
+        stats_filename = [stats_filename]
     cat = Table.read(stats_filename[0])
-    if len(stats_filename) > 0:
+    if len(stats_filename) > 1:
         for fname in stats_filename[1:]:
             tcat = Table.read(fname)
             cat = vstack([cat, tcat])
 
+    # make RA/Dec grid
+    ra = cat['RA']
+    dec = cat['DEC']
+    pixsize_degrees = pix_size / 3600
+    n_x, n_y, ra_delt, dec_delt = calc_nx_ny_from_pixsize(cat, pixsize_degrees)
+    # the ra spacing needs to be larger, as 1 degree of RA ==
+    # cos(DEC) degrees on the great circle
+    ra_grid = ra.min() + ra_delt * np.arange(0, n_x + 1, dtype=float)
+    dec_grid = dec.min() + dec_delt * np.arange(0, n_y + 1, dtype=float)
+
     # generate the wcs info for the output FITS files
-    #    also provides the mapping info from ra,dec to x,y
-    wcs_info, n_x, n_y = setup_spatial_regions(cat,
-                                               pix_size=args.pix_size)
+    w = make_wcs_for_map(ra_grid, dec_grid)
 
     # get the pixel coordinates for each source
-    xy_vals = regions_for_objects(cat['RA'],
-                                  cat['DEC'],
-                                  wcs_info)
+    pix_x, pix_y = get_pix_coords(cat, w)
+    #import pdb; pdb.set_trace()
 
-    x = xy_vals['x']
-    y = xy_vals['y']
+    # for ease of checking the bin, set x/y coords to integers
+    x = np.floor(pix_x)
+    y = np.floor(pix_y)
 
     # setup arrary to store summary stats per pixel
     n_sum = 2
     sum_stats = ['Av', 'Rv', 'f_A']
     n_sum = len(sum_stats)
-    summary_stats = np.zeros((n_y, n_x, n_sum+1), dtype=float)
-    summary_sigmas = np.zeros((n_y, n_x, n_sum), dtype=float)
-    values_foreach_pixel = {cur_stat: {(i, j): [] for i in range(n_x) for j in range(n_y)}
+    summary_stats = np.zeros((n_y+1, n_x+1, n_sum+1), dtype=float)
+    summary_sigmas = np.zeros((n_y+1, n_x+1, n_sum), dtype=float)
+    values_foreach_pixel = {cur_stat: {(i, j): [] for i in range(n_x+1) for j in range(n_y+1)}
                             for cur_stat in sum_stats}
 
     # loop through the pixels and generate the summary stats
-    for i in range(n_x):
-        for j in range(n_y):
+    for i in range(n_x+1):
+        for j in range(n_y+1):
             tindxs, = np.where((x == i) & (y == j))
             # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
             if len(tindxs) > 0:
@@ -164,7 +86,7 @@ if __name__ == '__main__':
                     summary_stats[j, i, k] = np.average(values)
                     summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
 
-    master_header = wcs_info.to_header()
+    master_header = w.to_header()
     # Now, write the maps to disk
     for k, cur_stat in enumerate(sum_stats):
         map_name = stats_filename[0].replace('stats', 'map' + cur_stat)
@@ -191,3 +113,25 @@ if __name__ == '__main__':
         dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
         for i, j in it.product(range(n_x), range(n_y)):
             dset[i, j] = values_foreach_pixel[cur_stat][i, j]
+
+
+
+
+
+if __name__ == '__main__':
+
+    # command line params to specify the run directory
+    #   and any other needed parameters
+
+    # commandline parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('stats_filename', metavar='fname',
+                        type=str, nargs='+',
+                        help="Filename(s) of the stats")
+    parser.add_argument("--pix_size", default=10., type=float,
+                        help="pixel scale [arcsec]")
+    args = parser.parse_args()
+
+
+    # call the function
+    make_maps(args.stats_filename, pix_size=args.pix_size)
