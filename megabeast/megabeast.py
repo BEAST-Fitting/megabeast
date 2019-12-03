@@ -14,10 +14,15 @@ from astropy.io import fits
 
 # beast
 from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+from beast.tools.read_beast_data import (
+    read_lnp_data,
+    read_noise_data,
+    read_sed_data,
+    get_lnp_grid_vals,
+)
 
 # megabeast
 from .read_megabeast_input import read_megabeast_input
-from .beast_data import read_beast_data, extract_beast_data, read_lnp_data
 from .ensemble_model import lnprob
 
 
@@ -37,6 +42,7 @@ def megabeast(megabeast_input_file, verbose=True):
     # read in the settings from the file
     mb_settings = read_megabeast_input(megabeast_input_file)
 
+
     # setup the megabeast model including defining the priors
     #   - dust distribution model
     #   - stellar populations model (later)
@@ -48,11 +54,18 @@ def megabeast(megabeast_input_file, verbose=True):
     n_x, n_y = nstars_image.shape
 
     # read in the beast data that is needed by all the pixels
-    beast_data = read_beast_data(
+    beast_data = {}
+    # - SED data
+    beast_data.update(read_sed_data(
         mb_settings["beast_seds_filename"],
+        param_list=["Av"]#, "Rv", "f_A"]
+    ))
+    # - max completeness
+    beast_data.update(read_noise_data(
         mb_settings["beast_noise_filename"],
-        beast_params=["completeness", "Av"],
-    )  # ,'Rv','f_A'])
+        param_list=["completeness"],
+    ))
+    beast_data["completeness"] = np.max(beast_data["completeness"], axis=1)
 
     # setup for output
     pixel_fit_status = np.full((n_x, n_y), False, dtype=bool)
@@ -69,15 +82,16 @@ def megabeast(megabeast_input_file, verbose=True):
             if nstars_image[i, j] >= mb_settings["min_for_fit"]:
                 pixel_fit_status[i, j] = True
                 # get the saved sparse likelihoods
-                lnp_filename = mb_settings["lnp_file_prefix"] + "_%i_%i_lnp.hd5" % (
-                    j,
-                    i,
+                lnp_filename = mb_settings["lnp_file_prefix"]+"_{0}_{1}_lnp.hd5".format(j, i)
+                lnp_data = read_lnp_data(
+                    lnp_filename,
+                    nstars=nstars_image[i,j],
+                    shift_lnp=True,
                 )
-                lnp_data = read_lnp_data(lnp_filename, nstars_image[i, j])
 
                 # get the completeness and BEAST model parameters for the
                 #   same grid points as the sparse likelihoods
-                lnp_grid_vals = extract_beast_data(beast_data, lnp_data)
+                lnp_grid_vals = get_lnp_grid_vals(beast_data, lnp_data)
 
                 # initialize the ensemble model with the parameters used
                 # for the saved BEAST model run results
@@ -133,6 +147,7 @@ def megabeast(megabeast_input_file, verbose=True):
             % (mb_settings["projectname"], mb_settings["projectname"], cname),
             overwrite=True,
         )
+
 
 
 if __name__ == "__main__":
