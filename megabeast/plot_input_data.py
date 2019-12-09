@@ -9,12 +9,7 @@ from astropy.io import fits
 
 # beast
 from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
-from beast.tools.read_beast_data import (
-    read_lnp_data,
-    read_noise_data,
-    read_sed_data,
-    get_lnp_grid_vals,
-)
+from beast.tools import read_beast_data
 
 # megabeast
 from .read_megabeast_input import read_megabeast_input
@@ -48,12 +43,12 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     # read in the beast data that is needed by all the pixels
     beast_data = {}
     # - SED data
-    beast_data.update(read_sed_data(
+    beast_data.update(read_beast_data.read_sed_data(
         mb_settings["beast_seds_filename"],
         param_list=["Av"]#, "Rv", "f_A"]
     ))
     # - max completeness
-    beast_data.update(read_noise_data(
+    beast_data.update(read_beast_data.read_noise_data(
         mb_settings["beast_noise_filename"],
         param_list=["completeness"],
     ))
@@ -103,7 +98,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
 
                 # get info about the fits
                 lnp_filename = mb_settings["lnp_file_prefix"]+"_{0}_{1}_lnp.hd5".format(j, i)
-                lnp_data = read_lnp_data(
+                lnp_data = read_beast_data.read_lnp_data(
                     lnp_filename,
                     nstars=nstars_image[i,j],
                     shift_lnp=True,
@@ -111,7 +106,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
 
                 # get the completeness and BEAST model parameters for the
                 #   same grid points as the sparse likelihoods
-                lnp_grid_vals = get_lnp_grid_vals(beast_data, lnp_data)
+                lnp_grid_vals = read_beast_data.get_lnp_grid_vals(beast_data, lnp_data)
 
                 # grab the things we want to plot
                 plot_av = lnp_grid_vals["Av"]
