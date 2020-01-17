@@ -6,11 +6,7 @@ __all__ = ['__version__', '__githash__']
 try:
     _ASTROPY_SETUP_
 except NameError:
-    from sys import version_info
-    if version_info[0] >= 3:
-        import builtins
-    else:
-        import __builtin__ as builtins
+    import builtins
     builtins._ASTROPY_SETUP_ = False
 
 try:
@@ -32,8 +28,9 @@ if not _ASTROPY_SETUP_:  # noqa
         ConfigurationDefaultMissingWarning)
 
     # Create the test function for self test
-    from astropy.tests.helper import TestRunner
+    from astropy.tests.runner import TestRunner
     test = TestRunner.make_test_runner_in(os.path.dirname(__file__))
+    test.__test__ = False
     __all__ += ['test']
 
     # add these here so we only need to cleanup the namespace at the end
