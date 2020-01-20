@@ -2,9 +2,6 @@
 Functions providing the ensemble model and likelihood functions
 """
 
-# system imports
-from __future__ import (absolute_import, division, print_function)
-
 # other package imports
 import numpy as np
 
@@ -13,7 +10,7 @@ import numpy as np
 
 
 # temporary for development - remove and use PriorWeightsDust only
-def _lognorm(x, max_pos, sigma=0.5, N=1.):
+def _lognorm(x, max_pos, sigma=0.5, N=1.0):
     """
     Lognormal distribution
 
@@ -35,26 +32,22 @@ def _lognorm(x, max_pos, sigma=0.5, N=1.):
     -------
     lognormal computed on the x grid
     """
-    sqrt_2pi = 1. / np.sqrt(2 * np.pi)
-    mu = np.log(max_pos) + sigma**2
+    sqrt_2pi = 1.0 / np.sqrt(2 * np.pi)
+    mu = np.log(max_pos) + sigma ** 2
 
     # avoid zero or negative due to log
-    indxs, = np.where(x > 0)
+    (indxs,) = np.where(x > 0)
 
     lnorm = np.zeros(len(x))
 
     log_x = np.log(x[indxs])
     normalization = sqrt_2pi / (x[indxs] * sigma)
 
-    lnorm[indxs] = (N * normalization
-                    * np.exp(-0.5 * ((log_x - mu) / sigma)**2))
+    lnorm[indxs] = N * normalization * np.exp(-0.5 * ((log_x - mu) / sigma) ** 2)
     return lnorm
 
 
-def _two_lognorm(xs,
-                 max_pos1, max_pos2,
-                 sigma1=0.5, sigma2=0.5,
-                 N1=1., N2=1.):
+def _two_lognorm(xs, max_pos1, max_pos2, sigma1=0.5, sigma2=0.5, N1=1.0, N2=1.0):
     """
     Mixture of 2 lognormal functions
 
@@ -82,8 +75,9 @@ def _two_lognorm(xs,
     -------
     Mixture model: (LOGNORM1 + LOGNORM2)
     """
-    pointwise = (_lognorm(xs, max_pos1, sigma=sigma1, N=N1)
-                 + _lognorm(xs, max_pos2, sigma=sigma2, N=N2))
+    pointwise = _lognorm(xs, max_pos1, sigma=sigma1, N=N1) + _lognorm(
+        xs, max_pos2, sigma=sigma2, N=N2
+    )
     return pointwise
 
 
@@ -119,11 +113,15 @@ def lnlike(phi, beast_dust_priors, lnp_data, lnp_grid_vals):
     n_lnps, n_stars = beast_dust_priors.av_vals.shape
     new_prior = np.empty(beast_dust_priors.av_vals.shape, dtype=float)
     for k in range(n_stars):
-        new_prior[:, k] = _two_lognorm(beast_dust_priors.av_vals[:, k],
-                                       max_pos1, max_pos2,
-                                       sigma1=sigma1, sigma2=sigma2,
-                                       N1=1 - 1/(N12_ratio+1),
-                                       N2=1/(N12_ratio+1))
+        new_prior[:, k] = _two_lognorm(
+            beast_dust_priors.av_vals[:, k],
+            max_pos1,
+            max_pos2,
+            sigma1=sigma1,
+            sigma2=sigma2,
+            N1=1 - 1 / (N12_ratio + 1),
+            N2=1 / (N12_ratio + 1),
+        )
         if not np.isfinite(np.sum(new_prior[:, k])):
             print(new_prior[:, k])
             exit()
@@ -131,17 +129,17 @@ def lnlike(phi, beast_dust_priors, lnp_data, lnp_grid_vals):
     # weights are those that adjust the saved likelihoods for the new
     # ensemble model (ensemble "priors")
     #   save as log to allow easy summing later
-    weight_ratio = new_prior/beast_dust_priors.av_priors
+    weight_ratio = new_prior / beast_dust_priors.av_priors
 
     # compute the each star's integrated probability that it fits the new model
     # including the completeness function
-    star_probs = np.sum(weight_ratio
-                        * lnp_grid_vals['completeness']
-                        * np.exp(lnp_data['vals']), axis=0)
+    star_probs = np.sum(
+        weight_ratio * lnp_grid_vals["completeness"] * np.exp(lnp_data["vals"]), axis=0
+    )
 
     # remove any results that have zero integrated probabilities
     #   need to check why this is the case - all A(V) values of 0?
-    indxs, = np.where(star_probs > 0.)
+    (indxs,) = np.where(star_probs > 0.0)
 
     # print(np.sum(new_prior,axis=0))
     # print(np.sum(np.exp(lnp_data['vals']),axis=0))
@@ -176,12 +174,14 @@ def lnprior(phi):
     # unpack ensemble parameters (Av only)
     max_pos1, max_pos2, sigma1, sigma2, N12_ratio = phi
 
-    if (0.05 <= sigma1 < 2
-            and 0.05 <= sigma2 < 2
-            and 0 <= max_pos1 < 2
-            and 0 <= max_pos2 < 3
-            and max_pos1 < max_pos2
-            and 0.01 < N12_ratio < 100):
+    if (
+        0.05 <= sigma1 < 2
+        and 0.05 <= sigma2 < 2
+        and 0 <= max_pos1 < 2
+        and 0 <= max_pos2 < 3
+        and max_pos1 < max_pos2
+        and 0.01 < N12_ratio < 100
+    ):
         return 0.0
     else:
         return -np.inf
