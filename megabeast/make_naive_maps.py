@@ -4,7 +4,6 @@ import argparse
 import numpy as np
 import h5py
 import itertools as it
-from astropy import wcs
 from astropy.io import fits
 from astropy.table import Table, vstack
 
@@ -15,7 +14,7 @@ from beast.tools.create_background_density_map import (
 )
 
 
-def make_maps(stats_filename, pix_size=10.):
+def make_maps(stats_filename, pix_size=10.0):
     """
     Make the naive maps
 
@@ -31,7 +30,7 @@ def make_maps(stats_filename, pix_size=10.):
 
     # type of statistic (make a commandline parameter later)
     #   remember to add to output filenames
-    stat_type = 'Exp'
+    stat_type = "Exp"
 
     # read in the full brick catalog
     if type(stats_filename) == str:
@@ -43,8 +42,8 @@ def make_maps(stats_filename, pix_size=10.):
             cat = vstack([cat, tcat])
 
     # make RA/Dec grid
-    ra = cat['RA']
-    dec = cat['DEC']
+    ra = cat["RA"]
+    dec = cat["DEC"]
     pixsize_degrees = pix_size / 3600
     n_x, n_y, ra_delt, dec_delt = calc_nx_ny_from_pixsize(cat, pixsize_degrees)
     # the ra spacing needs to be larger, as 1 degree of RA ==
@@ -57,7 +56,7 @@ def make_maps(stats_filename, pix_size=10.):
 
     # get the pixel coordinates for each source
     pix_x, pix_y = get_pix_coords(cat, w)
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
 
     # for ease of checking the bin, set x/y coords to integers
     x = np.floor(pix_x)
@@ -65,49 +64,48 @@ def make_maps(stats_filename, pix_size=10.):
 
     # setup arrary to store summary stats per pixel
     n_sum = 2
-    sum_stats = ['Av', 'Rv', 'f_A']
+    sum_stats = ["Av", "Rv", "f_A"]
     n_sum = len(sum_stats)
-    summary_stats = np.zeros((n_y+1, n_x+1, n_sum+1), dtype=float)
-    summary_sigmas = np.zeros((n_y+1, n_x+1, n_sum), dtype=float)
-    values_foreach_pixel = {cur_stat: {(i, j): [] for i in range(n_x+1) for j in range(n_y+1)}
-                            for cur_stat in sum_stats}
+    summary_stats = np.zeros((n_y + 1, n_x + 1, n_sum + 1), dtype=float)
+    summary_sigmas = np.zeros((n_y + 1, n_x + 1, n_sum), dtype=float)
+    values_foreach_pixel = {
+        cur_stat: {(i, j): [] for i in range(n_x + 1) for j in range(n_y + 1)}
+        for cur_stat in sum_stats
+    }
 
     # loop through the pixels and generate the summary stats
-    for i in range(n_x+1):
-        for j in range(n_y+1):
-            tindxs, = np.where((x == i) & (y == j))
+    for i in range(n_x + 1):
+        for j in range(n_y + 1):
+            (tindxs,) = np.where((x == i) & (y == j))
             # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
             if len(tindxs) > 0:
                 summary_stats[j, i, n_sum] = len(tindxs)
                 print(i, j, len(tindxs))
                 for k, cur_stat in enumerate(sum_stats):
-                    values = cat[cur_stat + '_' + stat_type][tindxs]
+                    values = cat[cur_stat + "_" + stat_type][tindxs]
                     values_foreach_pixel[cur_stat][i, j] = values
                     summary_stats[j, i, k] = np.average(values)
-                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
+                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(
+                        len(values)
+                    )
 
     master_header = w.to_header()
     # Now, write the maps to disk
     for k, cur_stat in enumerate(sum_stats):
-        map_name = stats_filename[0].replace('stats', 'map' + cur_stat)
-        hdu = fits.PrimaryHDU(summary_stats[:, :, k],
-                              header=master_header)
+        map_name = stats_filename[0].replace("stats", "map" + cur_stat)
+        hdu = fits.PrimaryHDU(summary_stats[:, :, k], header=master_header)
         hdu.writeto(map_name, overwrite=True)
 
-        sigma_name = map_name.replace('map', 'map_sigma')
-        hdu_sigma = fits.PrimaryHDU(summary_sigmas[:, :, k],
-                                    header=master_header)
+        sigma_name = map_name.replace("map", "map_sigma")
+        hdu_sigma = fits.PrimaryHDU(summary_sigmas[:, :, k], header=master_header)
         hdu_sigma.writeto(sigma_name, overwrite=True)
 
-    hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum],
-                          header=master_header)
-    hdu.writeto(stats_filename[0].replace('stats', 'npts'),
-                overwrite=True)
+    hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum], header=master_header)
+    hdu.writeto(stats_filename[0].replace("stats", "npts"), overwrite=True)
 
     # And store all the values in HDF5 format
-    values_name = stats_filename[0].replace('stats.fits',
-                                            'values_per_pixel.hd5')
-    f = h5py.File(values_name, 'w')
+    values_name = stats_filename[0].replace("stats.fits", "values_per_pixel.hd5")
+    f = h5py.File(values_name, "w")
     dt = h5py.special_dtype(vlen=np.dtype(np.float))
     for cur_stat in sum_stats:
         dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
@@ -115,23 +113,24 @@ def make_maps(stats_filename, pix_size=10.):
             dset[i, j] = values_foreach_pixel[cur_stat][i, j]
 
 
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # command line params to specify the run directory
     #   and any other needed parameters
 
     # commandline parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('stats_filename', metavar='fname',
-                        type=str, nargs='+',
-                        help="Filename(s) of the stats")
-    parser.add_argument("--pix_size", default=10., type=float,
-                        help="pixel scale [arcsec]")
+    parser.add_argument(
+        "stats_filename",
+        metavar="fname",
+        type=str,
+        nargs="+",
+        help="Filename(s) of the stats",
+    )
+    parser.add_argument(
+        "--pix_size", default=10.0, type=float, help="pixel scale [arcsec]"
+    )
     args = parser.parse_args()
-
 
     # call the function
     make_maps(args.stats_filename, pix_size=args.pix_size)
