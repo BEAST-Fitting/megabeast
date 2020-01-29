@@ -8,14 +8,12 @@ from matplotlib.backends.backend_pdf import PdfPages
 from astropy.io import fits
 
 # beast
-from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+# from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 from beast.tools import read_beast_data
 
 # megabeast
 from .read_megabeast_input import read_megabeast_input
-from .ensemble_model import lnprob, _two_lognorm
-
-import pdb
+# from .ensemble_model import lnprob, _two_lognorm
 
 
 def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
@@ -149,7 +147,6 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                             alpha=0.3,
                             zorder=9999,
                         )
-                    # pdb.set_trace()
 
     ax = plt.gca()
     ax.set_xlabel(r"$A_V$")
@@ -214,7 +211,6 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                             edgecolor="xkcd:azure",
                         )
                     # plt.xlim(xmax=max_av)
-                    # pdb.set_trace()
 
     plt.suptitle(r"Best-fit $A_V$ for each pixel", fontsize=40)
 
