@@ -71,4 +71,3 @@ Reference/API
 =============
 
 .. automodapi:: megabeast.ensemble_model
-.. automodapi:: megabeast.beast_data
