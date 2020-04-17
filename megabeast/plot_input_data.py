@@ -13,6 +13,7 @@ from beast.tools import read_beast_data
 
 # megabeast
 from .read_megabeast_input import read_megabeast_input
+
 # from .ensemble_model import lnprob, _two_lognorm
 
 
@@ -41,15 +42,17 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     # read in the beast data that is needed by all the pixels
     beast_data = {}
     # - SED data
-    beast_data.update(read_beast_data.read_sed_data(
-        mb_settings["beast_seds_filename"],
-        param_list=["Av"]#, "Rv", "f_A"]
-    ))
+    beast_data.update(
+        read_beast_data.read_sed_data(
+            mb_settings["beast_seds_filename"], param_list=["Av"]  # , "Rv", "f_A"]
+        )
+    )
     # - max completeness
-    beast_data.update(read_beast_data.read_noise_data(
-        mb_settings["beast_noise_filename"],
-        param_list=["completeness"],
-    ))
+    beast_data.update(
+        read_beast_data.read_noise_data(
+            mb_settings["beast_noise_filename"], param_list=["completeness"],
+        )
+    )
     beast_data["completeness"] = np.max(beast_data["completeness"], axis=1)
 
     # read in the nstars image
@@ -59,9 +62,6 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     # dimensions of images/plotting
     y_dimen = nstars_image.shape[0]
     x_dimen = nstars_image.shape[1]
-
-
-
 
     # set up multi-page figure
     if not log_scale:
@@ -82,7 +82,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     print("")
 
     # set up figure
-    fig = plt.figure(figsize=(6, 6))
+    plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1)
 
     for i in tqdm(range(y_dimen), desc="y pixels"):
@@ -95,11 +95,11 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
             if nstars_image[i, j] > 20:
 
                 # get info about the fits
-                lnp_filename = mb_settings["lnp_file_prefix"]+"_{0}_{1}_lnp.hd5".format(j, i)
+                lnp_filename = mb_settings[
+                    "lnp_file_prefix"
+                ] + "_{0}_{1}_lnp.hd5".format(j, i)
                 lnp_data = read_beast_data.read_lnp_data(
-                    lnp_filename,
-                    nstars=nstars_image[i,j],
-                    shift_lnp=True,
+                    lnp_filename, nstars=nstars_image[i, j], shift_lnp=True,
                 )
 
                 # get the completeness and BEAST model parameters for the
@@ -110,7 +110,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                 plot_av = lnp_grid_vals["Av"]
                 plot_comp = lnp_grid_vals["completeness"]
 
-                for n in range(nstars_image[i,j]):
+                for n in range(nstars_image[i, j]):
 
                     # plot a random subset of the AVs and completenesses
                     if (i % 3 == 0) and (j % 3 == 0):
@@ -163,7 +163,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     print("")
 
     # set up figure
-    fig = plt.figure(figsize=(x_dimen * 2, y_dimen * 2))
+    plt.figure(figsize=(x_dimen * 2, y_dimen * 2))
 
     # flat list of A_V
     # https://stackoverflow.com/questions/952914/making-a-flat-list-out-of-list-of-lists-in-python
@@ -182,8 +182,8 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
 
     for i in tqdm(range(y_dimen), desc="y pixels"):
         for j in tqdm(range(x_dimen), desc="x pixels"):
-    # for i in [0]:
-    #    for j in [12]:
+            # for i in [0]:
+            #    for j in [12]:
 
             if nstars_image[i, j] > 20:
 
@@ -193,7 +193,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                 # make a histogram
                 if best_av[i][j] != []:
                     if not log_scale:
-                        h = plt.hist(
+                        plt.hist(
                             best_av[i][j],
                             bins=bins.size,
                             range=(uniq_av[0] - gap / 2, uniq_av[-1] + gap / 2),
@@ -202,7 +202,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                             edgecolor="xkcd:azure",
                         )
                     if log_scale:
-                        h = plt.hist(
+                        plt.hist(
                             np.log10(best_av[i][j]),
                             bins=bins.size,
                             range=(uniq_av[0] - gap / 2, uniq_av[-1] + gap / 2),
@@ -228,12 +228,12 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     for chi2_cut in chi2_plot:
 
         # set up figure
-        fig = plt.figure(figsize=(x_dimen * 2, y_dimen * 2))
+        plt.figure(figsize=(x_dimen * 2, y_dimen * 2))
 
         for i in tqdm(range(y_dimen), desc="y pixels"):
             for j in tqdm(range(x_dimen), desc="x pixels"):
-        # for i in [0]:
-        #    for j in [12]:
+                # for i in [0]:
+                #    for j in [12]:
 
                 if nstars_image[i, j] > 20:
 
@@ -253,7 +253,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                                 ]
                             )
                         if len(plot_av) != 0:
-                            h = plt.hist(
+                            plt.hist(
                                 plot_av,
                                 bins=bins.size,
                                 range=(uniq_av[0] - gap / 2, uniq_av[-1] + gap / 2),
