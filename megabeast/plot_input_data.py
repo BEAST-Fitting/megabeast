@@ -9,10 +9,10 @@ from astropy.io import fits
 
 # beast
 # from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+from beast.tools import read_beast_data
 
 # megabeast
 from .read_megabeast_input import read_megabeast_input
-from .beast_data import read_beast_data, extract_beast_data, read_lnp_data
 # from .ensemble_model import lnprob, _two_lognorm
 
 
@@ -39,11 +39,18 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     projectname = mb_settings["projectname"]
 
     # read in the beast data that is needed by all the pixels
-    beast_data = read_beast_data(
+    beast_data = {}
+    # - SED data
+    beast_data.update(read_beast_data.read_sed_data(
         mb_settings["beast_seds_filename"],
+        param_list=["Av"]#, "Rv", "f_A"]
+    ))
+    # - max completeness
+    beast_data.update(read_beast_data.read_noise_data(
         mb_settings["beast_noise_filename"],
-        beast_params=["completeness", "Av"],
-    )  # ,'Rv','f_A'])
+        param_list=["completeness"],
+    ))
+    beast_data["completeness"] = np.max(beast_data["completeness"], axis=1)
 
     # read in the nstars image
     nstars_image, nstars_header = fits.getdata(
@@ -52,6 +59,9 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     # dimensions of images/plotting
     y_dimen = nstars_image.shape[0]
     x_dimen = nstars_image.shape[1]
+
+
+
 
     # set up multi-page figure
     if not log_scale:
@@ -85,21 +95,22 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
             if nstars_image[i, j] > 20:
 
                 # get info about the fits
-                lnp_filename = mb_settings["lnp_file_prefix"] + "_%i_%i_lnp.hd5" % (
-                    j,
-                    i,
+                lnp_filename = mb_settings["lnp_file_prefix"]+"_{0}_{1}_lnp.hd5".format(j, i)
+                lnp_data = read_beast_data.read_lnp_data(
+                    lnp_filename,
+                    nstars=nstars_image[i,j],
+                    shift_lnp=True,
                 )
-                lnp_data = read_lnp_data(lnp_filename, nstars_image[i, j])
 
                 # get the completeness and BEAST model parameters for the
                 #   same grid points as the sparse likelihoods
-                lnp_grid_vals = extract_beast_data(beast_data, lnp_data)
+                lnp_grid_vals = read_beast_data.get_lnp_grid_vals(beast_data, lnp_data)
 
                 # grab the things we want to plot
                 plot_av = lnp_grid_vals["Av"]
                 plot_comp = lnp_grid_vals["completeness"]
 
-                for n in range(nstars_image[i, j]):
+                for n in range(nstars_image[i,j]):
 
                     # plot a random subset of the AVs and completenesses
                     if (i % 3 == 0) and (j % 3 == 0):
@@ -136,7 +147,6 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                             alpha=0.3,
                             zorder=9999,
                         )
-                    # pdb.set_trace()
 
     ax = plt.gca()
     ax.set_xlabel(r"$A_V$")
@@ -172,8 +182,8 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
 
     for i in tqdm(range(y_dimen), desc="y pixels"):
         for j in tqdm(range(x_dimen), desc="x pixels"):
-            # for i in [0]:
-            #    for j in [12]:
+    # for i in [0]:
+    #    for j in [12]:
 
             if nstars_image[i, j] > 20:
 
@@ -201,7 +211,6 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
                             edgecolor="xkcd:azure",
                         )
                     # plt.xlim(xmax=max_av)
-                    # pdb.set_trace()
 
     plt.suptitle(r"Best-fit $A_V$ for each pixel", fontsize=40)
 
@@ -223,8 +232,8 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
 
         for i in tqdm(range(y_dimen), desc="y pixels"):
             for j in tqdm(range(x_dimen), desc="x pixels"):
-                # for i in [0]:
-                #    for j in [12]:
+        # for i in [0]:
+        #    for j in [12]:
 
                 if nstars_image[i, j] > 20:
 
