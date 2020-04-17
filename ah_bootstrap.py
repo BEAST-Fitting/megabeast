@@ -236,24 +236,14 @@ if sys.version_info < __minimum_python_version__:
 # issues with either missing or misbehaving pacakges (including making sure
 # setuptools itself is installed):
 
-<<<<<<< HEAD
-# Check that setuptools 1.0 or later is present
-=======
 # Check that setuptools 30.3 or later is present
->>>>>>> package template updates
 from distutils.version import LooseVersion
 
 try:
     import setuptools
-<<<<<<< HEAD
-    assert LooseVersion(setuptools.__version__) >= LooseVersion('1.0')
-except (ImportError, AssertionError):
-    print("ERROR: setuptools 1.0 or later is required by astropy-helpers")
-=======
     assert LooseVersion(setuptools.__version__) >= LooseVersion('30.3')
 except (ImportError, AssertionError):
     sys.stderr.write("ERROR: setuptools 30.3 or later is required by astropy-helpers\n")
->>>>>>> package template updates
     sys.exit(1)
 
 # typing as a dependency for 1.6.1+ Sphinx causes issues when imported after
