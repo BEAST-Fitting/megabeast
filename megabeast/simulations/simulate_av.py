@@ -23,7 +23,8 @@ def simulate_av(
     nstar_per_pix=50,
 ):
     """
-    Create a set of fake data in which A_V follows a log-normal distribution, which can then be run through the megabeast
+    Create a set of fake data in which A_V follows a log-normal distribution,
+    which can then be run through the megabeast
 
     Parameters
     ----------

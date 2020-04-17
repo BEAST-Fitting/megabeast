@@ -37,7 +37,6 @@ def megabeast(megabeast_input_file, verbose=True):
     # read in the settings from the file
     mb_settings = read_megabeast_input(megabeast_input_file)
 
-
     # setup the megabeast model including defining the priors
     #   - dust distribution model
     #   - stellar populations model (later)
@@ -51,15 +50,17 @@ def megabeast(megabeast_input_file, verbose=True):
     # read in the beast data that is needed by all the pixels
     beast_data = {}
     # - SED data
-    beast_data.update(read_beast_data.read_sed_data(
-        mb_settings["beast_seds_filename"],
-        param_list=["Av"]#, "Rv", "f_A"]
-    ))
+    beast_data.update(
+        read_beast_data.read_sed_data(
+            mb_settings["beast_seds_filename"], param_list=["Av"]  # , "Rv", "f_A"]
+        )
+    )
     # - max completeness
-    beast_data.update(read_beast_data.read_noise_data(
-        mb_settings["beast_noise_filename"],
-        param_list=["completeness"],
-    ))
+    beast_data.update(
+        read_beast_data.read_noise_data(
+            mb_settings["beast_noise_filename"], param_list=["completeness"],
+        )
+    )
     beast_data["completeness"] = np.max(beast_data["completeness"], axis=1)
 
     # setup for output
@@ -77,11 +78,11 @@ def megabeast(megabeast_input_file, verbose=True):
             if nstars_image[i, j] >= mb_settings["min_for_fit"]:
                 pixel_fit_status[i, j] = True
                 # get the saved sparse likelihoods
-                lnp_filename = mb_settings["lnp_file_prefix"]+"_{0}_{1}_lnp.hd5".format(j, i)
+                lnp_filename = mb_settings[
+                    "lnp_file_prefix"
+                ] + "_{0}_{1}_lnp.hd5".format(j, i)
                 lnp_data = read_beast_data.read_lnp_data(
-                    lnp_filename,
-                    nstars=nstars_image[i,j],
-                    shift_lnp=True,
+                    lnp_filename, nstars=nstars_image[i, j], shift_lnp=True,
                 )
 
                 # get the completeness and BEAST model parameters for the
@@ -105,7 +106,8 @@ def megabeast(megabeast_input_file, verbose=True):
                 )
 
                 # standard minimization to find initial values
-                chi2 = lambda *args: -1.0 * lnprob(*args)
+                def chi2(args):
+                    return -1.0 * lnprob(*args)
                 result = op.minimize(
                     chi2,
                     [0.25, 2.0, 0.5, 0.5, 1],
@@ -142,7 +144,6 @@ def megabeast(megabeast_input_file, verbose=True):
             % (mb_settings["projectname"], mb_settings["projectname"], cname),
             overwrite=True,
         )
-
 
 
 if __name__ == "__main__":

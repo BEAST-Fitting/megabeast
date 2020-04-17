@@ -128,7 +128,7 @@ def simulate_av_plots(
                 # prob_stack = prob_stack / np.sum(prob_stack)
                 prob_stack = prob_stack / np.trapz(prob_stack, av_grid)
 
-                ## stack up the probabilities at each A_V
+                # stack up the probabilities at each A_V
                 # prob_stack = np.sum(np.exp(lnp_vals), axis=1)
 
                 # set up the subplot
