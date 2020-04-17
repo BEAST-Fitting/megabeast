@@ -17,13 +17,22 @@ from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 from beast.tools import read_beast_data
 
 # megabeast
-from .read_megabeast_input import read_megabeast_input
-from .ensemble_model import lnprob
+from megabeast.read_megabeast_input import read_megabeast_input
+from megabeast.ensemble_model import lnprob
 
 
-def megabeast(megabeast_input_file, verbose=True):
+def megabeast_single():
     """
-    Run the MegaBEAST on each of the spatially-reordered BEAST outputs.
+    Run the MegaBEAST on a single set of BEAST results
+    """
+    pass
+
+
+def megabeast_image(megabeast_input_file, verbose=True):
+    """
+    Run the MegaBEAST on an image of BEAST results.  The BEAST results
+    are given as spatially-reordered BEAST outputs with a file of lnp results
+    for each pixel in the image.
 
     Parameters
     ----------
@@ -156,4 +165,4 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", help="verbose output", action="store_true")
     args = parser.parse_args()
 
-    megabeast(args.megabeast_input_file, verbose=args.verbose)
+    megabeast_image(args.megabeast_input_file, verbose=args.verbose)
