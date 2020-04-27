@@ -1,12 +1,12 @@
 """
 Functions providing the ensemble model and likelihood functions
 """
-
-# other package imports
 import numpy as np
 
 # beast imports
 # from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+
+__all__ = ["lnlike", "lnprior", "lnprob"]
 
 
 # temporary for development - remove and use PriorWeightsDust only

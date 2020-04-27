@@ -1,4 +1,4 @@
-astropy-helpers
+beast
 sphinx
 gitpython
 sphinx-astropy

@@ -1,18 +1,14 @@
 """
 Script to run the MegaBEAST on BEAST results.
 """
-
-# system
 import argparse
 import os
 
-# other packages
 from tqdm import trange
 import numpy as np
 import scipy.optimize as op
 from astropy.io import fits
 
-# beast
 from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 from beast.tools.read_beast_data import (
     read_lnp_data,
@@ -21,9 +17,11 @@ from beast.tools.read_beast_data import (
     read_noise_data,
 )
 
-# megabeast
-from megabeast.read_megabeast_input import read_megabeast_input
+from megabeast.read_input import read_input
 from megabeast.ensemble_model import lnprob
+
+
+__all__ = ["fit_ensemble", "megabeast_single", "megabeast_image"]
 
 
 def fit_ensemble(beast_data, lnp_filename, beast_priormodel, nstars_expected=None):
@@ -112,7 +110,7 @@ def megabeast_image(megabeast_input_file, verbose=True):
 
     """
     # read in the settings from the file
-    params = read_megabeast_input(megabeast_input_file)
+    params = read_input(megabeast_input_file)
 
     # use nstars image to setup for each pixel
     nstars_image, nstars_header = fits.getdata(params["nstars_filename"], header=True)
@@ -126,6 +124,9 @@ def megabeast_image(megabeast_input_file, verbose=True):
     beast_data.update(
         read_noise_data(params["beast_noise_filename"], param_list=["completeness"],)
     )
+    # completeness from toothpick model so n band completeness values
+    # require only 1 completeness value for each model
+    # max picked (may not be correct)
     beast_data["completeness"] = np.max(beast_data["completeness"], axis=1)
 
     # BEAST prior model

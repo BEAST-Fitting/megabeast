@@ -1,6 +1,6 @@
 import pkg_resources
 
-from megabeast.read_megabeast_input import read_megabeast_input, required_params
+from megabeast.read_input import read_input, required_params
 
 
 def test_megabeast_input():
@@ -11,7 +11,7 @@ def test_megabeast_input():
     data_path = pkg_resources.resource_filename("megabeast", "examples/")
     tfilename = f"{data_path}/megabeast_input.txt"
 
-    a = read_megabeast_input(tfilename)
+    a = read_input(tfilename)
 
     assert isinstance(a, dict), "result should be a dictionary"
 

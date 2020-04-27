@@ -1,20 +1,16 @@
-# system
-
-# other packages
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from astropy.io import fits
 
-# beast
-# from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 from beast.tools import read_beast_data
 
-# megabeast
-from .read_megabeast_input import read_megabeast_input
+from megabeast.read_input import read_input
 
 # from .ensemble_model import lnprob, _two_lognorm
+
+__all__ = ["plot_input_data"]
 
 
 def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
@@ -34,7 +30,7 @@ def plot_input_data(megabeast_input_file, chi2_plot=[], log_scale=False):
     """
 
     # read in the settings from the file
-    mb_settings = read_megabeast_input(megabeast_input_file)
+    mb_settings = read_input(megabeast_input_file)
 
     # get the project name
     projectname = mb_settings["projectname"]

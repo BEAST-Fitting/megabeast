@@ -1,16 +1,15 @@
-# other packages
 from tqdm import tqdm
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from astropy.io import fits
 
-# beast
+from beast.tools.read_beast_data import read_sed_data, read_lnp_data
 from beast.physicsmodel.prior_weights_dust import _lognorm, _two_lognorm
 
-# megabeast
-from ..read_megabeast_input import read_megabeast_input
-from ..beast_data import read_beast_data, read_lnp_data
+from megabeast.read_input import read_input
+
+__all__ = ["simulate_av_plots"]
 
 
 def simulate_av_plots(
@@ -35,13 +34,14 @@ def simulate_av_plots(
     """
 
     # read in the settings from the file
-    mb_settings = read_megabeast_input(megabeast_input_file)
+    mb_settings = read_input(megabeast_input_file)
 
     # get the project name
     projectname = mb_settings["projectname"]
 
     # read in the beast data that is needed by all the pixels
-    beast_data = read_beast_data(
+    # *** this likely needs updating - probably will fail - see megabeast.py
+    beast_data = read_sed_data(
         mb_settings["beast_seds_filename"],
         mb_settings["beast_noise_filename"],
         beast_params=["completeness", "Av"],

@@ -1,19 +1,16 @@
-# system
-from __future__ import absolute_import, division, print_function
-
-# other packages
 import numpy as np
 import matplotlib.pyplot as plt
 import aplpy
 from astropy.io import fits
 
-# megabeast
-from .read_megabeast_input import read_megabeast_input
+from megabeast.read_input import read_input
+
+__all__ = ["plot_bestfit_parameter_maps"]
 
 
-def parameter_maps(megabeast_input_file, n_col=2):
+def plot_bestfit_parameter_maps(megabeast_input_file, n_col=2):
     """
-    Create maps of the best-fit parameters from the MegaBEAST
+    Plot the best-fit parameters from the MegaBEAST
 
     Parameters
     ----------
@@ -22,11 +19,10 @@ def parameter_maps(megabeast_input_file, n_col=2):
 
     n_col : int (default=2)
         number of columns of plots in the output file
-
     """
 
     # read in the settings from the file
-    mb_settings = read_megabeast_input(megabeast_input_file)
+    mb_settings = read_input(megabeast_input_file)
 
     # get the project name
     projectname = mb_settings["projectname"]

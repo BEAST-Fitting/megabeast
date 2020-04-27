@@ -1,17 +1,17 @@
-# system
 import os
 import glob
 
-# other packages
 import numpy as np
 import scipy.stats
 from astropy.io import fits
 import h5py
 from astropy import wcs
 
-# beast
 from beast.physicsmodel.prior_weights_dust import _lognorm
 from beast.fitting.fit import save_lnp
+
+
+__all__ = ["simulate_av"]
 
 
 def simulate_av(

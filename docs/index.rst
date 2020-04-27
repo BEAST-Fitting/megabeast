@@ -67,7 +67,10 @@ For the complete list of contributors please see the `megabeast
 contributors page on Github
 <https://github.com/BEAST-Fitting/megabeast/graphs/contributors>`_.
 
-Reference/API
+Reference API
 =============
+.. toctree::
+   :maxdepth: 1
 
-.. automodapi:: megabeast.ensemble_model
+   megabeast/core_api.rst
+   megabeast/tools_api.rst

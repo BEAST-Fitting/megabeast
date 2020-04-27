@@ -1,7 +1,7 @@
 from astropy.table import Table
 import ast
 
-__all__ = ["read_megabeast_input"]
+__all__ = ["read_input"]
 
 
 required_params = [
@@ -18,7 +18,7 @@ required_params = [
 ]
 
 
-def read_megabeast_input(input_file):
+def read_input(input_file):
     """
     Read in the file with MegaBEAST settings.  Check that the minimum set of
     required parameters are present.
