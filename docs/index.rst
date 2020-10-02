@@ -15,6 +15,8 @@ User Documentation
    :maxdepth: 2
 
    Motivation and Goals <megabeast/goals.rst>
+   Settings file <megabeast/settings.rst>
+
    How to run <megabeast/running.rst>
    Creating simulated data <megabeast/simulate.rst>
 
