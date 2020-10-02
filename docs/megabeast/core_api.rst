@@ -2,7 +2,7 @@
 Core
 ****
 
-.. automodapi:: megabeast.megabeast
+.. automodapi:: megabeast.megabeast_fit
 
 .. automodapi:: megabeast.ensemble_model
 
