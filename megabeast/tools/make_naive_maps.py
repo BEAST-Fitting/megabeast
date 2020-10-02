@@ -14,9 +14,13 @@ from beast.tools.create_background_density_map import (
 )
 
 
-def make_maps(stats_filename, pix_size=10.0):
+__all__ = ["create_naive_maps"]
+
+
+def create_naive_maps(stats_filename, pix_size=10.0):
     """
-    Make the naive maps
+    Make the naive maps by directly averaging the BEAST results for all the
+    stars in each pixel.  Does not account for completeness, hence naive maps!
 
     Parameters
     ----------
@@ -25,7 +29,6 @@ def make_maps(stats_filename, pix_size=10.0):
 
     pix_size : float (default=10)
        size of pixels/regions in arcsec
-
     """
 
     # type of statistic (make a commandline parameter later)
@@ -133,4 +136,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # call the function
-    make_maps(args.stats_filename, pix_size=args.pix_size)
+    create_naive_maps(args.stats_filename, pix_size=args.pix_size)
