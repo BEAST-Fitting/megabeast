@@ -70,7 +70,7 @@ def fit_ensemble(beast_data, lnp_filename, beast_priormodel, nstars_expected=Non
     )
 
     # standard minimization to find initial values
-    def chi2(args):
+    def chi2(*args):
         return -1.0 * lnprob(*args)
 
     result = op.minimize(
