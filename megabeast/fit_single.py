@@ -5,7 +5,7 @@ import asdf
 
 from beast.physicsmodel.grid import SEDGrid
 
-from megabeast.settings import settings
+from megabeast.mbsettings import mbsettings
 from megabeast.singlepop_dust_model import MB_Model, fit_ensemble
 
 
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # read in the parameters
-    mbparams = settings(args.settings_file)
+    mbparams = mbsettings(args.settings_file)
 
     sedsfile = mbparams.beast_base + "_seds.grid.hd5"
     obsmodfile = mbparams.beast_base + "_noisemodel.grid.hd5"

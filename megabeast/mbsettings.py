@@ -1,9 +1,9 @@
-__all__ = ["settings"]
+__all__ = ["mbsettings"]
 
 
-class settings:
+class mbsettings:
     """
-    All of the settings for the MegaBEAST.
+    All of the settings for the MegaBEAST
 
     Attributes
     ----------
@@ -12,23 +12,19 @@ class settings:
         (e.g., supports dictonaries)
     """
 
-    def __init__(self, settings_file):
+    def __init__(self, settings_file=None):
         """
         Parameters
         ----------
         settings_file : string
             input file name
         """
+        if settings_file is not None:
+            self.settings_file = settings_file
+            self.read()
+            self.verify()
 
-        self.settings_file = settings_file
-
-        if self.settings_file is not None:
-            # read in the file
-            self.read_settings()
-            # verify parameters
-            self.verify_settings()
-
-    def read_settings(self):
+    def read(self):
         """
         Read in the settings file and set parameters
         """
@@ -73,7 +69,7 @@ class settings:
         for key in beast_params:
             setattr(self, key, beast_params[key])
 
-    def verify_settings(self):
+    def verify(self):
         """
         Run the verification code on the settings
         """
