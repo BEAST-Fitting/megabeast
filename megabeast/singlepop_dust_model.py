@@ -2,6 +2,7 @@ import numpy as np
 import scipy.optimize as op
 
 from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+from beast.physicsmodel.priormodel import PriorDustModel
 from beast.tools.read_beast_data import (
     read_lnp_data,
     get_lnp_grid_vals,
@@ -80,37 +81,33 @@ class MB_Model:
             if cmod["prior"]["name"] != "fixed":
                 for cvar in cmod["varnames"]:
                     self.physics_model[cparam][cvar] = phi[k]
-        print(self.physics_model)
+                    k += 1
+        # print(self.physics_model)
 
         # compute the ensemble model for all the model grid points for all stars
         n_lnps, n_stars = beast_dust_priors.av_vals.shape
         mb_physics_dust = np.zeros((n_lnps, n_stars), dtype=float)
-        for k in range(n_stars):
-            # compute the megabeast physics model on this star's sparse beast grid
-            # use the beast prior calculation as megabeast models = beast priors
-            physics_dust = PriorWeightsDust(
-                beast_dust_priors.av_vals[:, k],
-                self.physics_model["Av"],
-                beast_dust_priors.rv_vals[:, k],
-                self.physics_model["Rv"],
-                beast_dust_priors.fA_vals[:, k],
-                self.physics_model["fA"],
-            )
 
-            mb_physics_dust[:, k] = physics_dust.av_priors
-            # print(k, np.sum(mb_physics_dust[:, k]))
-            print("break")
-            print(lnp_data["vals"])
-            print(beast_dust_priors.av_vals[:, k])
-            print(beast_dust_priors.rv_vals[:, k])
-            print(mb_physics_dust[:, k])
+        av_prior = PriorDustModel(self.physics_model["Av"])
+        rv_prior = PriorDustModel(self.physics_model["Rv"])
+        fa_prior = PriorDustModel(self.physics_model["fA"])
 
-            # test for a spoiler star
-            if not np.isfinite(np.sum(mb_physics_dust[:, k])):
-                # print(mb_physics_dust[:, k])
-                raise ValueError(
-                    f"star #{k} has a non-finite integrated prob for this model"
-                )
+        gvals = np.isfinite(lnp_data["vals"])
+        mb_physics_dust[gvals] = (
+            av_prior(beast_dust_priors.av_vals[gvals])
+            * rv_prior(beast_dust_priors.rv_vals[gvals])
+            * fa_prior(beast_dust_priors.fA_vals[gvals])
+        )
+
+        # test for a spoiler stars
+        if np.any(~np.isfinite(np.sum(mb_physics_dust, axis=0))):
+            for k, psum in enumerate(np.sum(mb_physics_dust, axis=0)):
+                if not np.isfinite(psum):
+                    print(beast_dust_priors.av_vals[gvals, k])
+                    print(mb_physics_dust[:, k])
+                    raise ValueError(
+                        f"star #{k} has a non-finite integrated prob for this model"
+                    )
 
         # weights are those that adjust the saved likelihoods for the new
         # ensemble model (ensemble "priors")
@@ -124,21 +121,22 @@ class MB_Model:
             axis=0,
         )
 
+        for k in range(n_stars):
+            if not np.isfinite(star_probs[k]):
+                print(k)
+                print(weight_ratio[:, k])
+                print(lnp_grid_vals["completeness"][:, k])
+                # print(lnp_data["vals"][:, k])
+                exit()
+
         # remove any results that have zero integrated probabilities
         #   need to check why this is the case - all A(V) values of 0?
         (indxs,) = np.where(star_probs > 0.0)
 
-        # print(np.sum(new_prior,axis=0))
-        # print(np.sum(np.exp(lnp_data['vals']),axis=0))
-        # print(np.sum(lnp_grid_vals['completeness'],axis=0))
+        # print(" ")
         # print(star_probs)
-        # print('---')
-        # print(star_probs[indxs])
-        # print('---')
         # print(np.sum(np.log(star_probs[indxs])))
-        # print('===')
-        # exit()
-
+        # print(" ")
         # return the log product of the stars' probabilities
         return np.sum(np.log(star_probs[indxs]))
 
@@ -239,7 +237,7 @@ def fit_ensemble(beast_data, lnp_filename, beast_priormodel, megabeast_model):
         set of best fit parameters
     """
     # get the saved sparse likelihoods
-    lnp_data = read_lnp_data(lnp_filename, shift_lnp=True)
+    lnp_data = read_lnp_data(lnp_filename)
 
     # get the completeness and BEAST model parameters for the
     #   same grid points as the sparse likelihoods
@@ -268,11 +266,14 @@ def fit_ensemble(beast_data, lnp_filename, beast_priormodel, megabeast_model):
         chi2,
         megabeast_model.start_params()[0],
         args=(megabeast_model, beast_dust_priors, lnp_data, lnp_grid_vals),
-        # method="Nelder-Mead",
+        method="Nelder-Mead",
     )
 
     # next step would be to
     # run through MCMC to fully sample likelihood
     # maybe include option not to run MCMC
 
+    # print("output")
+    # print(megabeast_model.physics_model)
+    print(result)
     return result["x"]
