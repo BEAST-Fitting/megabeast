@@ -83,7 +83,7 @@ def create_naive_maps(stats_filename, pix_size=10.0):
             # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
             if len(tindxs) > 0:
                 summary_stats[j, i, n_sum] = len(tindxs)
-                print(i, j, len(tindxs))
+                # print(i, j, len(tindxs))
                 for k, cur_stat in enumerate(sum_stats):
                     values = cat[cur_stat + "_" + stat_type][tindxs]
                     values_foreach_pixel[cur_stat][i, j] = values
