@@ -17,7 +17,7 @@ from beast.tools.create_background_density_map import (
 __all__ = ["create_naive_maps"]
 
 
-def create_naive_maps(stats_filename, pix_size=10.0):
+def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
     """
     Make the naive maps by directly averaging the BEAST results for all the
     stars in each pixel.  Does not account for completeness, hence naive maps!
@@ -83,7 +83,8 @@ def create_naive_maps(stats_filename, pix_size=10.0):
             # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
             if len(tindxs) > 0:
                 summary_stats[j, i, n_sum] = len(tindxs)
-                print(i, j, len(tindxs))
+                if verbose:
+                    print(i, j, len(tindxs))
                 for k, cur_stat in enumerate(sum_stats):
                     values = cat[cur_stat + "_" + stat_type][tindxs]
                     values_foreach_pixel[cur_stat][i, j] = values
@@ -132,6 +133,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--pix_size", default=10.0, type=float, help="pixel scale [arcsec]"
+    )
+    parser.add_argument(
+        "--verbose", default=False, type=bool, help="print pixel indices as a check"
     )
     args = parser.parse_args()
 
