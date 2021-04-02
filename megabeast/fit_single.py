@@ -9,8 +9,7 @@ from megabeast.mbsettings import mbsettings
 from megabeast.singlepop_dust_model import MB_Model, fit_ensemble
 
 
-if __name__ == "__main__":
-
+def main():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -21,6 +20,8 @@ if __name__ == "__main__":
 
     # read in the parameters
     mbparams = mbsettings(args.settings_file)
+    print(mbparams.fd_model)
+    exit()
 
     sedsfile = mbparams.beast_base + "_seds.grid.hd5"
     obsmodfile = mbparams.beast_base + "_noisemodel.grid.hd5"
@@ -44,12 +45,20 @@ if __name__ == "__main__":
     # BEAST prior model from the beast_info file
     beast_pmodel = {}
     with asdf.open(infofile) as af:
-        tree = af.tree
+        # tree = af.tree
         beast_pmodel["AV"] = af.tree["av_prior_model"]
         beast_pmodel["RV"] = af.tree["rv_prior_model"]
         beast_pmodel["fA"] = af.tree["fA_prior_model"]
+
+    print(beast_pmodel)
+    exit()
 
     megabeast_model = MB_Model(mbparams)
 
     bestparams = fit_ensemble(beast_data, lnpfile, beast_pmodel, megabeast_model)
     print(bestparams)
+
+
+if __name__ == "__main__":
+
+    main()

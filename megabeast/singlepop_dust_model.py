@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.optimize as op
 
-from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+# from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 from beast.physicsmodel.priormodel import PriorDustModel
 from beast.tools.read_beast_data import (
     read_lnp_data,
