@@ -3,10 +3,6 @@ import scipy.optimize as op
 
 # from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
 from beast.physicsmodel.priormodel import PriorDustModel
-from beast.tools.read_beast_data import (
-    read_lnp_data,
-    get_lnp_grid_vals,
-)
 
 __all__ = ["MB_Model"]
 
@@ -236,28 +232,6 @@ def fit_ensemble(beast_data, lnp_filename, beast_priormodel, megabeast_model):
     fit_results : array
         set of best fit parameters
     """
-    # get the saved sparse likelihoods
-    lnp_data = read_lnp_data(lnp_filename)
-
-    # get the completeness and BEAST model parameters for the
-    #   same grid points as the sparse likelihoods
-    lnp_grid_vals = get_lnp_grid_vals(beast_data, lnp_data)
-
-    # compute the BEAST prior weights
-    #  needed so the BEAST posteriors updated with the MegaBEAST model
-    # ***currently only AV ensemble model supported***
-    avs = lnp_grid_vals["Av"]
-    rvs = lnp_grid_vals["Rv"]
-    fAs = lnp_grid_vals["f_A"]
-    beast_dust_priors = PriorWeightsDust(
-        avs,
-        beast_priormodel["AV"],
-        rvs,
-        beast_priormodel["RV"],
-        fAs,
-        beast_priormodel["fA"],
-    )
-
     # standard minimization to find initial values
     def chi2(*args):
         return -1.0 * lnprob(*args)
