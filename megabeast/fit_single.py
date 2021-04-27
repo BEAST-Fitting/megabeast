@@ -59,15 +59,16 @@ def main():
     # get the saved nD (sparse) likelihood multiplied by the grid_weight for each star
     star_lnpgriddata = get_likelihoods(lnpfile, beast_moddata)
 
-    # fit the model
-    bestparams = fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata)
-
     print("starting parameters")
     sparams = megabeast_model.start_params()
     print(sparams[0])
     print(
         sparams[1], lnprob(sparams[1], megabeast_model, star_lnpgriddata, beast_moddata)
     )
+
+    # fit the model
+    bestparams = fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata)
+
     print("final parameters")
     print(
         bestparams, lnprob(bestparams, megabeast_model, star_lnpgriddata, beast_moddata)

@@ -1,7 +1,8 @@
 import numpy as np
 import scipy.optimize as op
+import emcee
 
-# from beast.physicsmodel.prior_weights_dust import PriorWeightsDust
+from beast.physicsmodel.priormodel import PriorAgeModel as PhysAgeModel
 from beast.physicsmodel.priormodel import PriorDustModel as PhysDustModel
 
 __all__ = ["MB_Model"]
@@ -14,23 +15,44 @@ class MB_Model:
     """
 
     def __init__(self, params):
-        self.fd_model = params.fd_model
+        self.star_model = params.stellar_model
+        self.dust_model = params.fd_model
 
         # setup the physics model for the beast parameters
         #   uses the same format as the beast priors = megabeast physics model
         # --> needs to be generalized to also handle stellar parameters
         #     define a dict that translates between mb params and physical models
-        self.beast_params = ["Av", "Rv", "fA"]
+        self.params = ["logA", "Av", "Rv", "fA"]
         self.physics_model = {}
-        for cparam in self.beast_params:
-            cmod = self.fd_model[cparam]
+        for cparam in self.params:
+            if cparam in self.star_model.keys():
+                cmod = self.star_model[cparam]
+            elif cparam in self.dust_model.keys():
+                cmod = self.dust_model[cparam]
+            else:
+                raise ValueError("requested parameter not in mbsetting file")
+
             self.physics_model[cparam] = {"name": cmod["name"]}
+            self.physics_model[cparam]["varnames"] = cmod["varnames"]
+            self.physics_model[cparam]["prior"] = cmod["prior"]
             for cname, cval in zip(cmod["varnames"], cmod["varinit"]):
                 self.physics_model[cparam][cname] = cval
+
             # setup the phyics model for this parameter
-            self.physics_model[cparam]["model"] = PhysDustModel(
-                self.physics_model[cparam]
-            )
+            if cparam in self.star_model.keys():
+                if cparam == "logA":
+                    self.physics_model[cparam]["x"] = self.star_model["x"]
+                    self.physics_model[cparam]["nsubvars"] = len(
+                        self.physics_model[cparam]["x"]
+                    )
+                    self.physics_model[cparam]["model"] = PhysAgeModel(
+                        self.physics_model[cparam]
+                    )
+            elif cparam in self.dust_model.keys():
+                self.physics_model[cparam]["nsubvars"] = 1
+                self.physics_model[cparam]["model"] = PhysDustModel(
+                    self.physics_model[cparam]
+                )
 
     def start_params(self):
         """
@@ -42,14 +64,22 @@ class MB_Model:
             names give the parameters names and values for all the submodels
             with non-fixed priors
         """
-        dmod = self.fd_model
+        mod = self.physics_model
         names = []
         values = []
-        for ckey in dmod.keys():
-            if dmod[ckey]["prior"]["name"] != "fixed":
-                for cparam, cval in zip(dmod[ckey]["varnames"], dmod[ckey]["varinit"]):
-                    names.append(f"{ckey}_{cparam}")
-                    values.append(cval)
+        for ckey in mod.keys():
+            if mod[ckey]["prior"]["name"] != "fixed":
+                for k, cparam in enumerate(mod[ckey]["varnames"]):
+                    if (
+                        len(np.atleast_1d(mod[ckey][cparam])) > 1
+                    ):  # expand into multiple parameters
+                        for l, cval in enumerate(mod[ckey][cparam]):
+                            names.append(f"{ckey}_{cparam}{l+1}")
+                            values.append(cval)
+                    else:
+                        names.append(f"{ckey}_{cparam}")
+                        values.append(mod[ckey][cparam])
+
         return (names, values)
 
     def lnlike(self, phi, star_lnpgriddata, beast_moddata):
@@ -75,12 +105,17 @@ class MB_Model:
         # update the values in the physics model using the input ensemble parameters
         k = 0
         cur_physmod = np.full((len(beast_moddata["Av"])), 1.0, dtype=float)
-        for cparam in self.beast_params:
-            cmod = self.fd_model[cparam]
+        for cparam in self.params:
+            cmod = self.physics_model[cparam]
             if cmod["prior"]["name"] != "fixed":
                 for cvar in cmod["varnames"]:
-                    self.physics_model[cparam][cvar] = phi[k]
-                    k += 1
+                    if cmod["nsubvars"] > 1:
+                        for j in range(cmod["nsubvars"]):
+                            self.physics_model[cparam]["values"][j] = phi[k]
+                            k += 1
+                    else:
+                        self.physics_model[cparam][cvar] = phi[k]
+                        k += 1
 
                 # compute the physics model for the full BEAST physics grid
                 cur_physmod *= self.physics_model[cparam]["model"](
@@ -131,21 +166,29 @@ class MB_Model:
            0 if allowed
            -infinite if not allowed
         """
-        # check each dust parameter
-        dmod = self.fd_model
+        cmod = self.physics_model
         k = 0
-        for cdust in dmod.keys():
-            cprior = dmod[cdust]["prior"]
+        for cparam in cmod.keys():
+            cprior = cmod[cparam]["prior"]
             cname = cprior["name"]
             if cname != "fixed":
                 if cname == "flat":
-                    for i, cparam in enumerate(dmod[cdust]["varnames"]):
-                        if (
-                            phi[k] < cprior["minmax"][i][0]
-                            or phi[k] > cprior["minmax"][i][1]
-                        ):
-                            return -np.inf
-                        k += 1
+                    for i, vparam in enumerate(cmod[cparam]["varnames"]):
+                        if cmod[cparam]["nsubvars"] > 1:
+                            for j in range(len(np.atleast_1d(cprior["minmax"][i]))):
+                                if (
+                                    phi[k] < cprior["minmax"][0][j]
+                                    or phi[k] > cprior["minmax"][1][j]
+                                ):
+                                    return -np.inf
+                                k += 1
+                        else:
+                            if (
+                                phi[k] < cprior["minmax"][i][0]
+                                or phi[k] > cprior["minmax"][i][1]
+                            ):
+                                return -np.inf
+                            k += 1
                 else:
                     raise ValueError(f"{cname} prior not supported")
         return 0.0
@@ -181,6 +224,23 @@ def lnprob(phi, megabeast_model, star_lnpgriddata, beast_moddata):
     return ln_prior + megabeast_model.lnlike(phi, star_lnpgriddata, beast_moddata)
 
 
+def _get_best_fit_params(sampler):
+    """
+    Determine the best fit parameters given an emcee sampler object
+    """
+    # very likely a faster way
+    max_lnp = -1e6
+    nwalkers, nsteps = sampler.lnprobability.shape
+    for k in range(nwalkers):
+        tmax_lnp = np.nanmax(sampler.lnprobability[k])
+        if tmax_lnp > max_lnp:
+            max_lnp = tmax_lnp
+            (indxs,) = np.where(sampler.lnprobability[k] == tmax_lnp)
+            fit_params_best = sampler.chain[k, indxs[0], :]
+
+    return fit_params_best
+
+
 def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
     """
     Run the MegaBEAST on a single set of BEAST results.
@@ -206,12 +266,30 @@ def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
     def chi2(*args):
         return -1.0 * lnprob(*args)
 
-    result = op.minimize(
-        chi2,
-        megabeast_model.start_params()[1],
-        args=(megabeast_model, star_lnpgriddata, beast_moddata),
+    sparams = megabeast_model.start_params()[1]
+
+    # result = op.minimize(
+    # result = op.least_squares(
+        # chi2,
+        # sparams,
+        # args=(megabeast_model, star_lnpgriddata, beast_moddata),
+        # ftol=1e-20,
+        # xtol=1e-20
         # method="Nelder-Mead",
-    )
+    # )
+
+    ndim, nwalkers = len(sparams), 5 * len(sparams)
+
+    pos = sparams + 1e-4 * np.random.randn(nwalkers, ndim)
+
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
+                                    args=(megabeast_model, star_lnpgriddata, beast_moddata))
+    nsteps = 1000
+    sampler.run_mcmc(pos, nsteps, progress=True)
+    # samples = sampler.get_chain()
+
+    print(_get_best_fit_params(sampler))
+    exit()
 
     # next step would be to
     # run through MCMC to fully sample likelihood
@@ -219,6 +297,7 @@ def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
 
     # print("output")
     # print(megabeast_model.physics_model)
-    print(result)
+    # print(result)
 
-    return result["x"]
+    return "Success"
+    # return result["x"]
