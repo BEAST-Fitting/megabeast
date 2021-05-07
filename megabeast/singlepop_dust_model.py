@@ -1,11 +1,108 @@
 import numpy as np
-import scipy.optimize as op
+
+# import scipy.optimize as op
 import emcee
+from numpy.random import default_rng
 
 from beast.physicsmodel.priormodel import PriorAgeModel as PhysAgeModel
+from beast.physicsmodel.priormodel import PriorMassModel as PhysMassModel
 from beast.physicsmodel.priormodel import PriorDustModel as PhysDustModel
+from beast.physicsmodel.grid_weights_stars import compute_bin_boundaries
 
 __all__ = ["MB_Model"]
+
+
+def _get_predicted_num_stars(bphysparams, bphysmod, physmodage, physmodmass):
+    """
+    Calculate the expected number of stars based on the physics model as
+    given on the BEAST model grid including completeness.
+
+    Parameters
+    ----------
+    bphysparams : astropy.table
+        table giving the physical parameters, weights, and completeness on
+        the BEAST physical grid
+
+    bphysmod : array
+        probability of the physics model on the BEAST physics grid
+
+    physmodage : beast.physicmodel.priormodel
+        physics model of for age
+
+    physmodmass : beast.physicmodel.priormodel
+        physics model of for initial mass
+
+    Returns
+    -------
+    n_stars : float
+        number of stars expected
+    """
+
+    # initialize the random number generator
+    rangen = default_rng()
+
+    model_indx = np.arange(len(bphysparams["M_ini"]))
+
+    nsim = 0
+    # logage_range = [min(sedgrid["logA"]), max(sedgrid["logA"])]
+    mass_range = [min(bphysparams["M_ini"]), max(bphysparams["M_ini"])]
+
+    # compute the total mass and average mass of a star given the mass_prior_model
+    nmass = 100
+    masspts = np.logspace(np.log10(mass_range[0]), np.log10(mass_range[1]), nmass)
+    massprior = physmodmass(masspts)
+    totmass = np.trapz(massprior, masspts)
+    avemass = np.trapz(masspts * massprior, masspts) / totmass
+
+    # compute the mass of the remaining stars at each age and
+    # simulate the stars assuming everything is complete
+    gridweights = bphysmod * bphysparams["grid_weight"]
+    gridweights = gridweights / np.sum(gridweights)
+
+    grid_ages = np.unique(bphysparams["logA"])
+    ageprior = physmodage(grid_ages)
+    bin_boundaries = compute_bin_boundaries(grid_ages)
+    bin_widths = np.diff(10 ** (bin_boundaries))
+    totsim_indx = np.array([], dtype=int)
+    for cage, cwidth, cprior in zip(grid_ages, bin_widths, ageprior):
+        gmods = bphysparams["logA"] == cage
+        cur_mass_range = [
+            min(bphysparams["M_ini"][gmods]),
+            max(bphysparams["M_ini"][gmods]),
+        ]
+        gmass = (masspts >= cur_mass_range[0]) & (masspts <= cur_mass_range[1])
+        curmasspts = masspts[gmass]
+        curmassprior = massprior[gmass]
+        totcurmass = np.trapz(curmassprior, curmasspts)
+
+        # compute the mass remaining at each age -> this is the mass to simulate
+        simmass = cprior * cwidth * totcurmass / totmass
+        nsim_curage = int(round(simmass / avemass))
+
+        # simluate the stars at the current age
+        curweights = gridweights[gmods]
+        if np.sum(curweights) > 0:
+            curweights /= np.sum(curweights)
+            cursim_indx = rangen.choice(
+                model_indx[gmods], size=nsim_curage, p=curweights
+            )
+
+            totsim_indx = np.concatenate((totsim_indx, cursim_indx))
+
+            nsim += nsim_curage
+        # totsimcurmass = np.sum(sedgrid["M_ini"][cursim_indx])
+        # print(cage, totcurmass / totmass, simmass, totsimcurmass, nsim_curage)
+
+    totsimmass = np.sum(bphysparams["M_ini"][totsim_indx])
+    print(f"number total simulated stars = {nsim}; mass = {totsimmass}")
+    compl_choice = rangen.random(nsim)
+    compl_indx = bphysparams["completeness"][totsim_indx] >= compl_choice
+    sim_indx = totsim_indx[compl_indx]
+    totcompsimmass = np.sum(bphysparams["M_ini"][sim_indx])
+    print(
+        f"number of simulated stars w/ completeness = {len(sim_indx)}; mass = {totcompsimmass}"
+    )
+    exit()
 
 
 class MB_Model:
@@ -22,7 +119,7 @@ class MB_Model:
         #   uses the same format as the beast priors = megabeast physics model
         # --> needs to be generalized to also handle stellar parameters
         #     define a dict that translates between mb params and physical models
-        self.params = ["logA", "Av", "Rv", "fA"]
+        self.params = ["logA", "M_ini", "Av", "Rv", "fA"]
         self.physics_model = {}
         for cparam in self.params:
             if cparam in self.star_model.keys():
@@ -46,6 +143,11 @@ class MB_Model:
                         self.physics_model[cparam]["x"]
                     )
                     self.physics_model[cparam]["model"] = PhysAgeModel(
+                        self.physics_model[cparam]
+                    )
+                elif cparam == "M_ini":
+                    # currently no parameters possible
+                    self.physics_model[cparam]["model"] = PhysMassModel(
                         self.physics_model[cparam]
                     )
             elif cparam in self.dust_model.keys():
@@ -121,6 +223,14 @@ class MB_Model:
                 cur_physmod *= self.physics_model[cparam]["model"](
                     beast_moddata[cparam]
                 )
+
+        # compute probability the model produces the observed number of stars
+        pred_stars = _get_predicted_num_stars(
+            beast_moddata,
+            cur_physmod,
+            self.physics_model["logA"]["model"],
+            self.physics_model["M_ini"]["model"],
+        )
 
         # compute the each star's integrated probability that it fits the new model
         # including the completeness function
@@ -270,26 +380,24 @@ def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
 
     # result = op.minimize(
     # result = op.least_squares(
-        # chi2,
-        # sparams,
-        # args=(megabeast_model, star_lnpgriddata, beast_moddata),
-        # ftol=1e-20,
-        # xtol=1e-20
-        # method="Nelder-Mead",
+    #    chi2,
+    #    sparams,
+    #    args=(megabeast_model, star_lnpgriddata, beast_moddata),
+    #    ftol=1e-20,
+    #    xtol=1e-20
+    #    method="Nelder-Mead",
     # )
 
     ndim, nwalkers = len(sparams), 5 * len(sparams)
 
     pos = sparams + 1e-4 * np.random.randn(nwalkers, ndim)
 
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
-                                    args=(megabeast_model, star_lnpgriddata, beast_moddata))
-    nsteps = 1000
+    sampler = emcee.EnsembleSampler(
+        nwalkers, ndim, lnprob, args=(megabeast_model, star_lnpgriddata, beast_moddata)
+    )
+    nsteps = 100
     sampler.run_mcmc(pos, nsteps, progress=True)
     # samples = sampler.get_chain()
-
-    print(_get_best_fit_params(sampler))
-    exit()
 
     # next step would be to
     # run through MCMC to fully sample likelihood
@@ -299,5 +407,5 @@ def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
     # print(megabeast_model.physics_model)
     # print(result)
 
-    return "Success"
+    return _get_best_fit_params(sampler)
     # return result["x"]

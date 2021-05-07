@@ -44,6 +44,7 @@ def main():
         "Z",
         "distance",
         "prior_weight",
+        "grid_weight",
     ]
     sgrid = SEDGrid(sedsfile, backend="disk")
     for cparam in beast_physmod_param_list:
@@ -69,6 +70,7 @@ def main():
     # fit the model
     bestparams = fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata)
 
+    np.set_printoptions(precision=3)
     print("final parameters")
     print(
         bestparams, lnprob(bestparams, megabeast_model, star_lnpgriddata, beast_moddata)
