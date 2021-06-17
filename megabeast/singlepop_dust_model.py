@@ -3,6 +3,7 @@ import numpy as np
 # import scipy.optimize as op
 import emcee
 from numpy.random import default_rng
+import scipy
 
 from beast.physicsmodel.priormodel import PriorAgeModel as PhysAgeModel
 from beast.physicsmodel.priormodel import PriorMassModel as PhysMassModel
@@ -93,16 +94,17 @@ def _get_predicted_num_stars(bphysparams, bphysmod, physmodage, physmodmass):
         # totsimcurmass = np.sum(sedgrid["M_ini"][cursim_indx])
         # print(cage, totcurmass / totmass, simmass, totsimcurmass, nsim_curage)
 
-    totsimmass = np.sum(bphysparams["M_ini"][totsim_indx])
-    print(f"number total simulated stars = {nsim}; mass = {totsimmass}")
+    # totsimmass = np.sum(bphysparams["M_ini"][totsim_indx])
+    # print(f"number total simulated stars = {nsim}; mass = {totsimmass}")
     compl_choice = rangen.random(nsim)
     compl_indx = bphysparams["completeness"][totsim_indx] >= compl_choice
     sim_indx = totsim_indx[compl_indx]
-    totcompsimmass = np.sum(bphysparams["M_ini"][sim_indx])
-    print(
-        f"number of simulated stars w/ completeness = {len(sim_indx)}; mass = {totcompsimmass}"
-    )
-    exit()
+    # totcompsimmass = np.sum(bphysparams["M_ini"][sim_indx])
+    # print(
+    #     f"number of simulated stars w/ completeness = {len(sim_indx)}; mass = {totcompsimmass}"
+    # )
+
+    return len(sim_indx)
 
 
 class MB_Model:
@@ -223,6 +225,10 @@ class MB_Model:
                 cur_physmod *= self.physics_model[cparam]["model"](
                     beast_moddata[cparam]
                 )
+                # if cparam == "logA":
+                #     print(self.physics_model[cparam]["values"])
+
+        n_lnps, n_stars = star_lnpgriddata["indxs"].shape
 
         # compute probability the model produces the observed number of stars
         pred_stars = _get_predicted_num_stars(
@@ -231,11 +237,17 @@ class MB_Model:
             self.physics_model["logA"]["model"],
             self.physics_model["M_ini"]["model"],
         )
+        # cacluate the probability of the observed number of stars
+        #  ln form based on equation 8 in Weisz et al. (2013, ApJ, 762, 123)
+        logintprob = (
+            n_stars * np.log(pred_stars)
+            - pred_stars
+            - scipy.special.gammaln(n_stars + 1)
+        )
+        # print(pred_stars, n_stars, logintprob)
 
         # compute the each star's integrated probability that it fits the new model
         # including the completeness function
-        n_lnps, n_stars = star_lnpgriddata["indxs"].shape
-        logintprob = 0.0
         for i in range(n_stars):
             # mask for the finite star's lnpgrid values
             gmask = np.isfinite(star_lnpgriddata["vals"][i])
@@ -390,7 +402,7 @@ def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
 
     ndim, nwalkers = len(sparams), 5 * len(sparams)
 
-    pos = sparams + 1e-4 * np.random.randn(nwalkers, ndim)
+    pos = sparams * (1.0 + 1e-1 * np.random.randn(nwalkers, ndim))
 
     sampler = emcee.EnsembleSampler(
         nwalkers, ndim, lnprob, args=(megabeast_model, star_lnpgriddata, beast_moddata)
