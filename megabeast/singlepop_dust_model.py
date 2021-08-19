@@ -1,16 +1,15 @@
 import numpy as np
 
-# import scipy.optimize as op
+import scipy
 import emcee
 from numpy.random import default_rng
-import scipy
 
 from beast.physicsmodel.priormodel import PriorAgeModel as PhysAgeModel
 from beast.physicsmodel.priormodel import PriorMassModel as PhysMassModel
 from beast.physicsmodel.priormodel import PriorDustModel as PhysDustModel
 from beast.physicsmodel.grid_weights_stars import compute_bin_boundaries
 
-__all__ = ["MB_Model"]
+__all__ = ["MB_Model", "fit_ensemble"]
 
 
 def _get_predicted_num_stars(bphysparams, bphysmod, physmodage, physmodmass):
@@ -177,8 +176,8 @@ class MB_Model:
                     if (
                         len(np.atleast_1d(mod[ckey][cparam])) > 1
                     ):  # expand into multiple parameters
-                        for l, cval in enumerate(mod[ckey][cparam]):
-                            names.append(f"{ckey}_{cparam}{l+1}")
+                        for ll, cval in enumerate(mod[ckey][cparam]):
+                            names.append(f"{ckey}_{cparam}{ll+1}")
                             values.append(cval)
                     else:
                         names.append(f"{ckey}_{cparam}")

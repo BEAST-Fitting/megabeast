@@ -2,8 +2,8 @@
 Core
 ****
 
-.. automodapi:: megabeast.megabeast_fit
+.. automodapi:: megabeast.singlepop_dust_model
 
-.. automodapi:: megabeast.ensemble_model
+.. automodapi:: megabeast.mbsettings
 
-.. automodapi:: megabeast.read_input
+.. automodapi:: megabeast.helpers

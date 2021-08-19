@@ -8,6 +8,9 @@ Thus, the combination of the BEAST and megaBEAST is a Hierarchical Bayesian
 model.  The goal is to create maps of stellar and dust parameters of galaxies
 (e.g., A(V) or stellar age).
 
+.. note::
+   The documentation is not up-to-date.  A major refactor is in progress.
+
 User Documentation
 ==================
 

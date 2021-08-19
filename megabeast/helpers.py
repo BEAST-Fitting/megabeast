@@ -2,7 +2,7 @@ import numpy as np
 
 from beast.tools.read_beast_data import read_lnp_data
 
-all = ["get_likelihoods"]
+__all__ = ["get_likelihoods"]
 
 
 def get_likelihoods(ppdf_file, beast_model_data):
