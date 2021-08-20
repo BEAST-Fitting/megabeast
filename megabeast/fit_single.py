@@ -13,8 +13,7 @@ def main():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "settings_file",
-        help="Name of the file that contains the MegaBEAST settings",
+        "settings_file", help="Name of the file that contains the MegaBEAST settings"
     )
     args = parser.parse_args()
 

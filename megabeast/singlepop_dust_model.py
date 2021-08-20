@@ -2,108 +2,14 @@ import numpy as np
 
 import scipy
 import emcee
-from numpy.random import default_rng
 
 from beast.physicsmodel.priormodel import PriorAgeModel as PhysAgeModel
 from beast.physicsmodel.priormodel import PriorMassModel as PhysMassModel
 from beast.physicsmodel.priormodel import PriorDustModel as PhysDustModel
-from beast.physicsmodel.grid_weights_stars import compute_bin_boundaries
+
+from megabeast.helpers import precompute_mass_multipliers, get_predicted_num_stars
 
 __all__ = ["MB_Model", "fit_ensemble"]
-
-
-def _get_predicted_num_stars(bphysparams, bphysmod, physmodage, physmodmass):
-    """
-    Calculate the expected number of stars based on the physics model as
-    given on the BEAST model grid including completeness.
-
-    Parameters
-    ----------
-    bphysparams : astropy.table
-        table giving the physical parameters, weights, and completeness on
-        the BEAST physical grid
-
-    bphysmod : array
-        probability of the physics model on the BEAST physics grid
-
-    physmodage : beast.physicmodel.priormodel
-        physics model of for age
-
-    physmodmass : beast.physicmodel.priormodel
-        physics model of for initial mass
-
-    Returns
-    -------
-    n_stars : float
-        number of stars expected
-    """
-
-    # initialize the random number generator
-    rangen = default_rng()
-
-    model_indx = np.arange(len(bphysparams["M_ini"]))
-
-    nsim = 0
-    # logage_range = [min(sedgrid["logA"]), max(sedgrid["logA"])]
-    mass_range = [min(bphysparams["M_ini"]), max(bphysparams["M_ini"])]
-
-    # compute the total mass and average mass of a star given the mass_prior_model
-    nmass = 100
-    masspts = np.logspace(np.log10(mass_range[0]), np.log10(mass_range[1]), nmass)
-    massprior = physmodmass(masspts)
-    totmass = np.trapz(massprior, masspts)
-    avemass = np.trapz(masspts * massprior, masspts) / totmass
-
-    # compute the mass of the remaining stars at each age and
-    # simulate the stars assuming everything is complete
-    gridweights = bphysmod * bphysparams["grid_weight"]
-    gridweights = gridweights / np.sum(gridweights)
-
-    grid_ages = np.unique(bphysparams["logA"])
-    ageprior = physmodage(grid_ages)
-    bin_boundaries = compute_bin_boundaries(grid_ages)
-    bin_widths = np.diff(10 ** (bin_boundaries))
-    totsim_indx = np.array([], dtype=int)
-    for cage, cwidth, cprior in zip(grid_ages, bin_widths, ageprior):
-        gmods = bphysparams["logA"] == cage
-        cur_mass_range = [
-            min(bphysparams["M_ini"][gmods]),
-            max(bphysparams["M_ini"][gmods]),
-        ]
-        gmass = (masspts >= cur_mass_range[0]) & (masspts <= cur_mass_range[1])
-        curmasspts = masspts[gmass]
-        curmassprior = massprior[gmass]
-        totcurmass = np.trapz(curmassprior, curmasspts)
-
-        # compute the mass remaining at each age -> this is the mass to simulate
-        simmass = cprior * cwidth * totcurmass / totmass
-        nsim_curage = int(round(simmass / avemass))
-
-        # simluate the stars at the current age
-        curweights = gridweights[gmods]
-        if np.sum(curweights) > 0:
-            curweights /= np.sum(curweights)
-            cursim_indx = rangen.choice(
-                model_indx[gmods], size=nsim_curage, p=curweights
-            )
-
-            totsim_indx = np.concatenate((totsim_indx, cursim_indx))
-
-            nsim += nsim_curage
-        # totsimcurmass = np.sum(sedgrid["M_ini"][cursim_indx])
-        # print(cage, totcurmass / totmass, simmass, totsimcurmass, nsim_curage)
-
-    # totsimmass = np.sum(bphysparams["M_ini"][totsim_indx])
-    # print(f"number total simulated stars = {nsim}; mass = {totsimmass}")
-    compl_choice = rangen.random(nsim)
-    compl_indx = bphysparams["completeness"][totsim_indx] >= compl_choice
-    sim_indx = totsim_indx[compl_indx]
-    # totcompsimmass = np.sum(bphysparams["M_ini"][sim_indx])
-    # print(
-    #     f"number of simulated stars w/ completeness = {len(sim_indx)}; mass = {totcompsimmass}"
-    # )
-
-    return len(sim_indx)
 
 
 class MB_Model:
@@ -115,6 +21,11 @@ class MB_Model:
     def __init__(self, params):
         self.star_model = params.stellar_model
         self.dust_model = params.fd_model
+
+        # variable to allow for the computation of the mass mulitplier for each
+        # age and mass to be done only once if the IMF is fixed
+        #    must be True so during the 1st call to lnlike it is computed for all cases
+        self.compute_massmult = True
 
         # setup the physics model for the beast parameters
         #   uses the same format as the beast priors = megabeast physics model
@@ -229,13 +140,28 @@ class MB_Model:
 
         n_lnps, n_stars = star_lnpgriddata["indxs"].shape
 
-        # compute probability the model produces the observed number of stars
-        pred_stars = _get_predicted_num_stars(
+        # compute the mass multipliers for each age and metallicity
+        if self.compute_massmult:
+            self.massmultipliers = precompute_mass_multipliers(
+                beast_moddata, self.physics_model["M_ini"]["model"]
+            )
+            print("once")
+
+        # only compute the massmultipliers the 1st time if the IMF is fixed
+        #   saves computation time
+        if self.compute_massmult & (
+            self.physics_model["M_ini"]["prior"]["name"] == "fixed"
+        ):
+            self.compute_massmult = False
+
+        # compute the expected number of stars based on the current physics model
+        pred_stars = get_predicted_num_stars(
+            self.massmultipliers,
             beast_moddata,
             cur_physmod,
             self.physics_model["logA"]["model"],
-            self.physics_model["M_ini"]["model"],
         )
+
         # cacluate the probability of the observed number of stars
         #  ln form based on equation 8 in Weisz et al. (2013, ApJ, 762, 123)
         logintprob = (
