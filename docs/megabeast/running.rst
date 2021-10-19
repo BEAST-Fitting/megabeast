@@ -20,9 +20,9 @@ More information on the BEAST spatial reordering can be found in the
 Running
 *******
 
-The MegaBEAST should be installed (see :ref:`mb-install`.)
+The MegaBEAST should be installed (see :ref:`mb-install`.).
 
-The MegaBEAST is run from the commandline using a :ref:`mb-settings`.
+The MegaBEAST is run from the commandline using a :ref:`mb-settings` file.
 
 For fitting a single stellar population with a foreground screen of dust:
 
