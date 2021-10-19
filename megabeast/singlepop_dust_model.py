@@ -17,15 +17,9 @@ class MB_Model:
     MegaBEAST model that provides member functions to compute
     the likelihood and priors for a specific physical model
     """
-
     def __init__(self, params):
         self.star_model = params.stellar_model
         self.dust_model = params.fd_model
-
-        # variable to allow for the computation of the mass mulitplier for each
-        # age and mass to be done only once if the IMF is fixed
-        #    must be True so during the 1st call to lnlike it is computed for all cases
-        self.compute_massmult = True
 
         # setup the physics model for the beast parameters
         #   uses the same format as the beast priors = megabeast physics model
@@ -67,6 +61,19 @@ class MB_Model:
                 self.physics_model[cparam]["model"] = PhysDustModel(
                     self.physics_model[cparam]
                 )
+
+        # variable to control if N stars detected is computed
+        #   not done of SFH is fixed
+        if self.physics_model["logA"]["prior"]["name"] == "fixed":
+            self.compute_N_stars = False
+        else:
+            self.compute_N_stars = True
+
+        # variable to allow for the computation of the mass mulitplier for each
+        # age, mass, met to be done only once if the IMF is fixed
+        #    must be True so during the 1st call to lnlike it is computed for all cases
+        self.compute_massmult = True
+        self.massmultipliers = None
 
     def start_params(self):
         """
@@ -140,36 +147,37 @@ class MB_Model:
 
         n_lnps, n_stars = star_lnpgriddata["indxs"].shape
 
-        # compute the mass multipliers for each age and metallicity
-        if self.compute_massmult:
-            self.massmultipliers = precompute_mass_multipliers(
-                beast_moddata, self.physics_model["M_ini"]["model"]
+        if self.compute_N_stars:
+            # compute the mass multipliers for each age and metallicity
+            if self.compute_massmult:
+                self.massmultipliers = precompute_mass_multipliers(
+                    beast_moddata, self.physics_model["M_ini"]["model"]
+                )
+                print("once")
+
+                # only compute the massmultipliers the 1st time if the IMF is fixed
+                #   saves computation time
+                if self.physics_model["M_ini"]["prior"]["name"] == "fixed":
+                    self.compute_massmult = False
+
+            # compute the expected number of stars based on the current physics model
+            pred_stars = get_predicted_num_stars(
+                self.massmultipliers,
+                beast_moddata,
+                cur_physmod,
+                self.physics_model["logA"]["model"],
             )
-            print("once")
 
-        # only compute the massmultipliers the 1st time if the IMF is fixed
-        #   saves computation time
-        if self.compute_massmult & (
-            self.physics_model["M_ini"]["prior"]["name"] == "fixed"
-        ):
-            self.compute_massmult = False
-
-        # compute the expected number of stars based on the current physics model
-        pred_stars = get_predicted_num_stars(
-            self.massmultipliers,
-            beast_moddata,
-            cur_physmod,
-            self.physics_model["logA"]["model"],
-        )
-
-        # cacluate the probability of the observed number of stars
-        #  ln form based on equation 8 in Weisz et al. (2013, ApJ, 762, 123)
-        logintprob = (
-            n_stars * np.log(pred_stars)
-            - pred_stars
-            - scipy.special.gammaln(n_stars + 1)
-        )
-        # print(pred_stars, n_stars, logintprob)
+            # cacluate the probability of the observed number of stars
+            #  ln form based on equation 8 in Weisz et al. (2013, ApJ, 762, 123)
+            logintprob = (
+                n_stars * np.log(pred_stars)
+                - pred_stars
+                - scipy.special.gammaln(n_stars + 1)
+            )
+            # print(pred_stars, n_stars, logintprob)
+        else:
+            logintprob = 0.0
 
         # compute the each star's integrated probability that it fits the new model
         # including the completeness function
