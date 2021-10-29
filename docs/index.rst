@@ -12,9 +12,10 @@ User Documentation
 ==================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    Motivation and Goals <megabeast/goals.rst>
+   Graphical Models <megabeast/graphical_models.rst>
    Settings file <megabeast/settings.rst>
 
    How to run <megabeast/running.rst>
@@ -24,7 +25,7 @@ Installation
 ============
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
 
   How to install <megabeast/install.rst>
 
