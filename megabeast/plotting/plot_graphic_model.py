@@ -70,8 +70,8 @@ def plot_graphic_model(gtype="text", savefig="png"):
         "fA": ("<f<SUB>A</SUB>>", "<f<SUB>A</SUB>>"),
         "C": ("Completeness", "C(&theta;)"),
         "Cont": ("Contaminants\n&alpha;", "&alpha;"),
-        "Phys": ("MegaBEAST\nPhysics+Observation Model", "p(&theta;|&phi;)"),
-        "Like": ("BEAST\nLikelihoods", "BEAST\nL(&theta;)"),
+        "Phys": ("MegaBEAST\nPhysics+Observation Model", "p(&theta;|&phi;)p(&phi;)"),
+        "Like": ("BEAST\nLikelihoods", "<BEAST L(F<SUB>D</SUB>|&theta;)>"),
     }
 
     edges = {
