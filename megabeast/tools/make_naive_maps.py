@@ -2,6 +2,7 @@ import math
 
 import argparse
 import numpy as np
+import scipy.stats.median_abs_deviation as mad
 import h5py
 import itertools as it
 from astropy.io import fits
@@ -17,7 +18,7 @@ from beast.tools.create_background_density_map import (
 __all__ = ["create_naive_maps"]
 
 
-def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
+def create_naive_maps(stats_filename, pix_size=10.0, verbose=False, median=False):
     """
     Make the naive maps by directly averaging the BEAST results for all the
     stars in each pixel.  Does not account for completeness, hence naive maps!
@@ -87,10 +88,14 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
                 for k, cur_stat in enumerate(sum_stats):
                     values = cat[cur_stat + "_" + stat_type][tindxs]
                     values_foreach_pixel[cur_stat][i, j] = values
-                    summary_stats[j, i, k] = np.average(values)
-                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(
-                        len(values)
-                    )
+                    if median:
+                        summary_stats[j, i, k] = np.median(values)
+                        summary_sigmas[j, i, k] = mad(values)
+                    else:
+                        summary_stats[j, i, k] = np.average(values)
+                        summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(
+                            len(values)
+                        )
 
     master_header = w.to_header()
     # Now, write the maps to disk
@@ -135,6 +140,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--verbose", default=False, type=bool, help="print pixel indices as a check"
+    )
+    parser.add_argument(
+        "--median", default=False, type=bool, help="find the median of the values"
     )
     args = parser.parse_args()
 
