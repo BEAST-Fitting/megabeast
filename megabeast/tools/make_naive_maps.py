@@ -67,7 +67,7 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False, median=False
     y = np.floor(pix_y)
 
     # setup arrary to store summary stats per pixel
-    sum_stats = ["Av", "Rv", "f_A"]
+    sum_stats = ["Av", "Rv", "f_A", "logT", "M_act", "logA"]
     n_sum = len(sum_stats)
     summary_stats = np.zeros((n_y + 1, n_x + 1, n_sum + 1), dtype=float)
     summary_sigmas = np.zeros((n_y + 1, n_x + 1, n_sum), dtype=float)
