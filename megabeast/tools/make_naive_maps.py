@@ -2,7 +2,7 @@ import math
 
 import argparse
 import numpy as np
-import scipy.stats.median_abs_deviation as mad
+from scipy.stats import median_abs_deviation
 import h5py
 import itertools as it
 from astropy.io import fits
@@ -18,7 +18,11 @@ from beast.tools.create_background_density_map import (
 __all__ = ["create_naive_maps"]
 
 
-def create_naive_maps(stats_filename, pix_size=10.0, verbose=False, median=False):
+def create_naive_maps(stats_filename,
+                      pix_size=10.0,
+                      verbose=False,
+                      median=False,
+                      chi2mincut=None):
     """
     Make the naive maps by directly averaging the BEAST results for all the
     stars in each pixel.  Does not account for completeness, hence naive maps!
@@ -30,6 +34,12 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False, median=False
 
     pix_size : float (default=10)
        size of pixels/regions in arcsec
+
+    median : bool (default=False)
+       calculate the median of the BEAST results (instead of the mean)
+
+    chi2mincut : int (default=None)
+       place a chi2min cut on the BEAST results
     """
 
     # type of statistic (make a commandline parameter later)
@@ -80,7 +90,8 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False, median=False
     for i in range(n_x + 1):
         for j in range(n_y + 1):
             (tindxs,) = np.where((x == i) & (y == j))
-            # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
+            if chi2mincut:
+                (tindxs,) = np.where((x == i) & (y == j) & (cat['chi2min'] < chi2mincut))
             if len(tindxs) > 0:
                 summary_stats[j, i, n_sum] = len(tindxs)
                 if verbose:
@@ -88,19 +99,19 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False, median=False
                 for k, cur_stat in enumerate(sum_stats):
                     values = cat[cur_stat + "_" + stat_type][tindxs]
                     values_foreach_pixel[cur_stat][i, j] = values
+                    summary_stats[j, i, k] = np.average(values)
+                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
                     if median:
                         summary_stats[j, i, k] = np.median(values)
-                        summary_sigmas[j, i, k] = mad(values)
-                    else:
-                        summary_stats[j, i, k] = np.average(values)
-                        summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(
-                            len(values)
-                        )
+                        summary_sigmas[j, i, k] = median_abs_deviation(values)
 
     master_header = w.to_header()
     # Now, write the maps to disk
     for k, cur_stat in enumerate(sum_stats):
-        map_name = stats_filename[0].replace("stats", "map" + cur_stat)
+        map_name = stats_filename[0].replace("stats.fits", "map_" + \
+                                             cur_stat + "_" + \
+                                             str(pix_size) + \
+                                             "arcsec.fits")
         hdu = fits.PrimaryHDU(summary_stats[:, :, k], header=master_header)
         hdu.writeto(map_name, overwrite=True)
 
@@ -109,7 +120,7 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False, median=False
         hdu_sigma.writeto(sigma_name, overwrite=True)
 
     hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum], header=master_header)
-    hdu.writeto(stats_filename[0].replace("stats", "npts"), overwrite=True)
+    hdu.writeto(stats_filename[0].replace("stats.fits", "npts.fits"), overwrite=True)
 
     # And store all the values in HDF5 format
     values_name = stats_filename[0].replace("stats.fits", "values_per_pixel.hd5")
