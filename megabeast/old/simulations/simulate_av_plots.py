@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 
 from beast.tools.read_beast_data import read_sed_data, read_lnp_data
-from beast.physicsmodel.prior_weights_dust import _lognorm, _two_lognorm
+from beast.physicsmodel.priormodel_functions import _lognorm, _two_lognorm
 
 from megabeast.read_input import read_input
 

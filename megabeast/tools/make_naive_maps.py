@@ -36,7 +36,7 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
     stat_type = "Exp"
 
     # read in the full brick catalog
-    if type(stats_filename) == str:
+    if isinstance(stats_filename, str):
         stats_filename = [stats_filename]
     cat = Table.read(stats_filename[0])
     if len(stats_filename) > 1:
