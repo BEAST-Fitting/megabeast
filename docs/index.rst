@@ -58,7 +58,7 @@ fixes, code, or documentation (no git or GitHub experience necessary):
 
 * `Coding Guidelines <https://docs.astropy.org/en/stable/development/codeguide.html>`_
 
-* `Developer Documentation <https://docs.astropy.org/en/stable/#developer-documentation>`_
+* `Developer Documentation <https://docs.astropy.org/en/stable/index_dev.html>`_
 
 
 For the complete list of contributors please see the `megabeast
