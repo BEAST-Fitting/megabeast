@@ -115,8 +115,8 @@ def create_naive_maps(stats_filename,
                         av_values = cat["Av" + "_" + stat_type][tindxs]
                         values_foreach_pixel[cur_stat][i, j] = values / av_values
 
-                        summary_stats[j, i, k] = np.average(values / av_values)
-                        summary_sigmas[j, i, k] = np.std(values / av_values, ddof=1) / math.sqrt(len(values))
+                        summary_stats[j, i, k] = np.average(values, weights=av_values)
+                        summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
                     else:
                         summary_stats[j, i, k] = np.average(values)
                         summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
