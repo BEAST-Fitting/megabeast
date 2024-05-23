@@ -130,7 +130,7 @@ def create_naive_maps(stats_filename,
     # And store all the values in HDF5 format
     values_name = stats_filename[0].replace("stats.fits", "values_per_pixel.hd5")
     f = h5py.File(values_name, "w")
-    dt = h5py.special_dtype(vlen=float) #np.dtype(np.float))
+    dt = h5py.special_dtype(vlen=float)
     for cur_stat in sum_stats:
         dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
         for i, j in it.product(range(n_x), range(n_y)):
