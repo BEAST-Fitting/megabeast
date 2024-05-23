@@ -21,7 +21,7 @@ def create_naive_maps(stats_filename,
                       pix_size=10.0,
                       verbose=False,
                       median=False,
-                      chi2mincut=None):
+                      chi2mincut=False):
     """
     Make the naive maps by directly averaging the BEAST results for all the
     stars in each pixel.  Does not account for completeness, hence naive maps!
@@ -54,6 +54,9 @@ def create_naive_maps(stats_filename,
             tcat = Table.read(fname)
             cat = vstack([cat, tcat])
 
+    if chi2mincut:
+        cat = cat[cat['chi2min'] < chi2mincut]
+
     # make RA/Dec grid
     ra = cat["RA"]
     dec = cat["DEC"]
@@ -85,13 +88,14 @@ def create_naive_maps(stats_filename,
         for cur_stat in sum_stats
     }
 
+    print('n_x', n_x)
+    print('n_y', n_y)
+    print('len x', np.shape(x))
+    print('len y', len(y))
     # loop through the pixels and generate the summary stats
     for i in range(n_x + 1):
         for j in range(n_y + 1):
-            if chi2mincut:
-                (tindxs,) = np.where((x == i) & (y == j) & (cat['chi2min'] < chi2mincut))
-            else:
-                (tindxs,) = np.where((x == i) & (y == j))
+            (tindxs,) = np.where((x == i) & (y == j))
             if len(tindxs) > 0:
                 summary_stats[j, i, n_sum] = len(tindxs)
                 if verbose:
@@ -103,8 +107,8 @@ def create_naive_maps(stats_filename,
                     summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
                     if median:
                         summary_stats[j, i, k] = np.median(values)
-                        x = abs(values - np.median(values)) ** 2.
-                        summary_sigmas[j, i, k] = np.sqrt(np.median(x)) / math.sqrt(len(values))
+                        xabs = abs(values - np.median(values)) ** 2.
+                        summary_sigmas[j, i, k] = np.sqrt(np.median(xabs)) / math.sqrt(len(values))
 
     master_header = w.to_header()
     # Now, write the maps to disk
@@ -126,7 +130,7 @@ def create_naive_maps(stats_filename,
     # And store all the values in HDF5 format
     values_name = stats_filename[0].replace("stats.fits", "values_per_pixel.hd5")
     f = h5py.File(values_name, "w")
-    dt = h5py.special_dtype(vlen=np.dtype(np.float))
+    dt = h5py.special_dtype(vlen=float) #np.dtype(np.float))
     for cur_stat in sum_stats:
         dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
         for i, j in it.product(range(n_x), range(n_y)):
