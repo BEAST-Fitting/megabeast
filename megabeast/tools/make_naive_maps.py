@@ -2,7 +2,6 @@ import math
 
 import argparse
 import numpy as np
-from scipy.stats import median_abs_deviation
 import h5py
 import itertools as it
 from astropy.io import fits
@@ -89,9 +88,10 @@ def create_naive_maps(stats_filename,
     # loop through the pixels and generate the summary stats
     for i in range(n_x + 1):
         for j in range(n_y + 1):
-            (tindxs,) = np.where((x == i) & (y == j))
             if chi2mincut:
                 (tindxs,) = np.where((x == i) & (y == j) & (cat['chi2min'] < chi2mincut))
+            else:
+                (tindxs,) = np.where((x == i) & (y == j))
             if len(tindxs) > 0:
                 summary_stats[j, i, n_sum] = len(tindxs)
                 if verbose:
@@ -103,7 +103,8 @@ def create_naive_maps(stats_filename,
                     summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
                     if median:
                         summary_stats[j, i, k] = np.median(values)
-                        summary_sigmas[j, i, k] = median_abs_deviation(values)
+                        x = abs(values - np.median(values)) ** 2.
+                        summary_sigmas[j, i, k] = np.sqrt(np.median(x)) / math.sqrt(len(values))
 
     master_header = w.to_header()
     # Now, write the maps to disk
