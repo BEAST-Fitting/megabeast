@@ -27,6 +27,9 @@ class MB_Model:
         #     define a dict that translates between mb params and physical models
         self.params = ["logA", "M_ini", "Av", "Rv", "fA"]
         self.physics_model = {}
+        print(self.params)
+        print(self.star_model.keys())
+        print(self.dust_model.keys())
         for cparam in self.params:
             if cparam in self.star_model.keys():
                 cmod = self.star_model[cparam]
@@ -194,12 +197,19 @@ class MB_Model:
                 * beast_moddata["completeness"][curindxs]
             )
             # checks for spoilers
+            # print(i, star_intprob)
             if not np.isfinite(star_intprob):
                 raise ValueError("invidual integrated star prob is not finite")
             if star_intprob == 0.0:
-                raise ValueError("invidual integrated star prob is zero")
+                pass
+                # print(i, star_intprob)
+            #    raise ValueError("invidual integrated star prob is zero")
+            else:
+                logintprob += np.log(star_intprob)
 
-            logintprob += np.log(star_intprob)
+        if logintprob == 0.0:
+            print(logintprob)
+            exit()
 
         return logintprob
 
@@ -288,6 +298,7 @@ def _get_best_fit_params(sampler):
     nwalkers, nsteps = sampler.lnprobability.shape
     for k in range(nwalkers):
         tmax_lnp = np.nanmax(sampler.lnprobability[k])
+        print(tmax_lnp)
         if tmax_lnp > max_lnp:
             max_lnp = tmax_lnp
             (indxs,) = np.where(sampler.lnprobability[k] == tmax_lnp)
