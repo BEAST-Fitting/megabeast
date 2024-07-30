@@ -21,7 +21,7 @@ def create_naive_maps(stats_filename,
                       pix_size=10.0,
                       verbose=False,
                       median=False,
-                      chi2mincut=None,
+                      chi2mincut=False,
                       weigh_by_av=False):
     """
     Make the naive maps by directly averaging the BEAST results for all the
@@ -85,7 +85,7 @@ def create_naive_maps(stats_filename,
 
     # setup arrary to store summary stats per pixel
     sum_stats = ["Av", "Rv", "f_A", "logT", "M_act", "logA"]
-    print("sum_stats", sum_stats)
+    print("summary stats", sum_stats)
     n_sum = len(sum_stats)
     summary_stats = np.zeros((n_y + 1, n_x + 1, n_sum + 1), dtype=float)
     summary_sigmas = np.zeros((n_y + 1, n_x + 1, n_sum), dtype=float)
