@@ -113,9 +113,9 @@ def create_naive_maps(stats_filename,
     master_header = w.to_header()
     # Now, write the maps to disk
     for k, cur_stat in enumerate(sum_stats):
-        map_name = stats_filename[0].replace("stats.fits", "map_" + \
-                                             cur_stat + "_" + \
-                                             str(pix_size) + \
+        map_name = stats_filename[0].replace("stats.fits", "map_" +
+                                             cur_stat + "_" +
+                                             str(pix_size) +
                                              "arcsec.fits")
         hdu = fits.PrimaryHDU(summary_stats[:, :, k], header=master_header)
         hdu.writeto(map_name, overwrite=True)
