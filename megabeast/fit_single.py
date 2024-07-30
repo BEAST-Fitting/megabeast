@@ -49,7 +49,7 @@ def main():
     for cparam in beast_physmod_param_list:
         beast_moddata[cparam] = sgrid.grid[cparam]
 
-    # get the completness from the BEAST observation model
+    # get the completeness from the BEAST observation model
     #   use the maximum completeness across the bands as the correct obsmodel
     #   would only have one completeness value per model
     #   max is the best approximation for the toothpick model (maybe???  average??)

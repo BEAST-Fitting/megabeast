@@ -27,10 +27,6 @@ Build checks/status
    :target: https://codecov.io/gh/BEAST-Fitting/megabeast
    :alt: Test Coverage Status
 
-.. image:: https://img.shields.io/lgtm/grade/python/g/BEAST-Fitting/megabeast.svg?logo=lgtm&logoWidth=18
-    :target: https://lgtm.com/projects/g/BEAST-Fitting/megabeast/context:python
-    :alt: LGTM language grade: Python
-
 .. image:: https://api.codacy.com/project/badge/Grade/584c9ed581c6457381d01a4e86e08916
     :target: https://www.codacy.com/manual/kgordon/megabeast?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=karllark/megabeast&amp;utm_campaign=Badge_Grade
     :alt: Codacy Badge
@@ -81,5 +77,5 @@ more information.
 
 .. _AstroPy: http://www.astropy.org/
 .. _contributing: http://docs.astropy.org/en/stable/index.html#contributing
-.. _developer: http://docs.astropy.org/en/stable/index.html#developer-documentation
+.. _developer: https://docs.astropy.org/en/stable/index_dev.html
 .. _Astropy Code of Conduct:  http://www.astropy.org/about.html#codeofconduct

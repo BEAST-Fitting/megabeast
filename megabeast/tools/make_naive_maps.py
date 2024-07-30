@@ -23,6 +23,7 @@ def create_naive_maps(stats_filename,
                       median=False,
                       chi2mincut=False,
                       weigh_by_av=False):
+
     """
     Make the naive maps by directly averaging the BEAST results for all the
     stars in each pixel.  Does not account for completeness, hence naive maps!
@@ -44,6 +45,7 @@ def create_naive_maps(stats_filename,
     weigh_by_av : bool (default=False)
         weigh R(V) and f_A by A(V) to determinе R(V) and f_A of the total column
         of dust in a pixel (as opposed to finding a simple average across a pixel)
+
     """
 
     # type of statistic (make a commandline parameter later)
@@ -86,6 +88,7 @@ def create_naive_maps(stats_filename,
     # setup arrary to store summary stats per pixel
     sum_stats = ["Av", "Rv", "f_A", "logT", "M_act", "logA"]
     print("summary stats", sum_stats)
+
     n_sum = len(sum_stats)
     summary_stats = np.zeros((n_y + 1, n_x + 1, n_sum + 1), dtype=float)
     summary_sigmas = np.zeros((n_y + 1, n_x + 1, n_sum), dtype=float)
@@ -94,6 +97,10 @@ def create_naive_maps(stats_filename,
         for cur_stat in sum_stats
     }
 
+    print('n_x', n_x)
+    print('n_y', n_y)
+    print('len x', np.shape(x))
+    print('len y', len(y))
     # loop through the pixels and generate the summary stats
     for i in range(n_x + 1):
         for j in range(n_y + 1):
