@@ -99,7 +99,7 @@ class MB_Model:
                         len(np.atleast_1d(mod[ckey][cparam])) > 1
                     ):  # expand into multiple parameters
                         for ll, cval in enumerate(mod[ckey][cparam]):
-                            names.append(f"{ckey}_{cparam}{ll+1}")
+                            names.append(f"{ckey}_{cparam}{ll + 1}")
                             values.append(cval)
                     else:
                         names.append(f"{ckey}_{cparam}")
