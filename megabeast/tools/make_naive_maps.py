@@ -2,7 +2,6 @@ import math
 
 import argparse
 import numpy as np
-from scipy.stats import median_abs_deviation
 import h5py
 import itertools as it
 from astropy.io import fits
@@ -40,10 +39,10 @@ def create_naive_maps(stats_filename,
        calculate the median of the BEAST results (instead of the mean)
 
     chi2mincut : int (default=None)
-       place a chi2min cut on the BEAST results
+       place a chi2min cut on the BEAST results. Gives the max threshold.
 
     weigh_by_av : bool (default=False)
-        weigh R(V) and f_A by A(V) to determining R(V) and f_A of the total column
+        weigh R(V) and f_A by A(V) to determinе R(V) and f_A of the total column
         of dust in a pixel (as opposed to finding a simple average across a pixel)
     """
 
@@ -52,7 +51,7 @@ def create_naive_maps(stats_filename,
     stat_type = "Exp"
 
     # read in the full brick catalog
-    if type(stats_filename) == str:
+    if isinstance(stats_filename, str):
         stats_filename = [stats_filename]
     cat = Table.read(stats_filename[0])
     if len(stats_filename) > 1:
@@ -60,14 +59,14 @@ def create_naive_maps(stats_filename,
             tcat = Table.read(fname)
             cat = vstack([cat, tcat])
 
+    if chi2mincut:
+        cat = cat[cat['chi2min'] < chi2mincut]
+
     # make RA/Dec grid
     ra = cat["RA"]
     dec = cat["DEC"]
     pixsize_degrees = pix_size / 3600
     n_x, n_y, ra_delt, dec_delt = calc_nx_ny_from_pixsize(cat, pixsize_degrees)
-    print("pix_size", pix_size)
-    print("n_x", n_x)
-    print("ra_delt", ra_delt)
     # the ra spacing needs to be larger, as 1 degree of RA ==
     # cos(DEC) degrees on the great circle
     ra_grid = ra.min() + ra_delt * np.arange(0, n_x + 1, dtype=float)
@@ -99,39 +98,35 @@ def create_naive_maps(stats_filename,
     for i in range(n_x + 1):
         for j in range(n_y + 1):
             (tindxs,) = np.where((x == i) & (y == j))
-            if chi2mincut:
-                (tindxs,) = np.where((x == i) & (y == j) & (cat['chi2min'] < chi2mincut))
             if len(tindxs) > 0:
                 summary_stats[j, i, n_sum] = len(tindxs)
                 if verbose:
                     print(i, j, len(tindxs))
                 for k, cur_stat in enumerate(sum_stats):
                     values = cat[cur_stat + "_" + stat_type][tindxs]
-                    values_foreach_pixel[cur_stat][i, j] = values
 
                     # weigh R(V) and f_A by A(V)
                     if weigh_by_av and ("Rv" in cur_stat or "f_A" in cur_stat):
                         # get Av values
                         av_values = cat["Av" + "_" + stat_type][tindxs]
                         values_foreach_pixel[cur_stat][i, j] = values / av_values
-
-                        summary_stats[j, i, k] = np.average(values, weights=av_values)
-                        summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
+                        weights = av_values
                     else:
-                        summary_stats[j, i, k] = np.average(values)
-                        summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
+                        values_foreach_pixel[cur_stat][i, j] = values
+                        weights = None
+
                     if median:
                         summary_stats[j, i, k] = np.median(values)
-                        summary_sigmas[j, i, k] = median_abs_deviation(values)
+                        xabs = abs(values - np.median(values)) ** 2.
+                        summary_sigmas[j, i, k] = np.sqrt(np.median(xabs)) / math.sqrt(len(values))
+                    else:
+                        summary_stats[j, i, k] = np.average(values, weights=weights)
+                        summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
 
     master_header = w.to_header()
     # Now, write the maps to disk
     for k, cur_stat in enumerate(sum_stats):
-        map_name = stats_filename[0].replace("stats.fits", "map_" + \
-                                             cur_stat + "_" + \
-                                             str(pix_size) + \
-                                             "arcsec.fits")
-        print("writing naive maps to disk:", map_name)
+        map_name = stats_filename[0].replace("stats.fits", "map_" + cur_stat + "_" + str(pix_size) + "arcsec.fits")
         hdu = fits.PrimaryHDU(summary_stats[:, :, k], header=master_header)
         hdu.writeto(map_name, overwrite=True)
 
@@ -140,12 +135,12 @@ def create_naive_maps(stats_filename,
         hdu_sigma.writeto(sigma_name, overwrite=True)
 
     hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum], header=master_header)
-    hdu.writeto(stats_filename[0].replace("stats_HRC.fits", "npts.fits"), overwrite=True)
+    hdu.writeto(stats_filename[0].replace("stats.fits", "npts.fits"), overwrite=True)
 
     # And store all the values in HDF5 format
-    values_name = stats_filename[0].replace("stats_HRC.fits", "values_per_pixel.hd5")
+    values_name = stats_filename[0].replace("stats.fits", "values_per_pixel.hd5")
     f = h5py.File(values_name, "w")
-    dt = h5py.special_dtype(vlen=np.dtype(np.float))
+    dt = h5py.special_dtype(vlen=float)
     for cur_stat in sum_stats:
         dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
         for i, j in it.product(range(n_x), range(n_y)):
@@ -174,6 +169,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--median", default=False, type=bool, help="find the median of the values"
+    )
+    parser.add_argument(
+        "--chi2mincut", default=False, type=int, help="max chi2min threshold to place on results"
+    )
+    parser.add_argument(
+        "--weigh_by_av", default=False, type=bool, help="weigh R(V) or f_A by A(V)"
     )
     args = parser.parse_args()
 
