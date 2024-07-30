@@ -21,7 +21,9 @@ def create_naive_maps(stats_filename,
                       pix_size=10.0,
                       verbose=False,
                       median=False,
-                      chi2mincut=False):
+                      chi2mincut=False,
+                      weigh_by_av=False):
+
     """
     Make the naive maps by directly averaging the BEAST results for all the
     stars in each pixel.  Does not account for completeness, hence naive maps!
@@ -38,7 +40,12 @@ def create_naive_maps(stats_filename,
        calculate the median of the BEAST results (instead of the mean)
 
     chi2mincut : int (default=None)
-       place a chi2min cut on the BEAST results
+       place a chi2min cut on the BEAST results. Gives the max threshold.
+
+    weigh_by_av : bool (default=False)
+        weigh R(V) and f_A by A(V) to determinе R(V) and f_A of the total column
+        of dust in a pixel (as opposed to finding a simple average across a pixel)
+
     """
 
     # type of statistic (make a commandline parameter later)
@@ -80,6 +87,8 @@ def create_naive_maps(stats_filename,
 
     # setup arrary to store summary stats per pixel
     sum_stats = ["Av", "Rv", "f_A", "logT", "M_act", "logA"]
+    print("summary stats", sum_stats)
+
     n_sum = len(sum_stats)
     summary_stats = np.zeros((n_y + 1, n_x + 1, n_sum + 1), dtype=float)
     summary_sigmas = np.zeros((n_y + 1, n_x + 1, n_sum), dtype=float)
@@ -102,13 +111,24 @@ def create_naive_maps(stats_filename,
                     print(i, j, len(tindxs))
                 for k, cur_stat in enumerate(sum_stats):
                     values = cat[cur_stat + "_" + stat_type][tindxs]
-                    values_foreach_pixel[cur_stat][i, j] = values
-                    summary_stats[j, i, k] = np.average(values)
-                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
+
+                    # weigh R(V) and f_A by A(V)
+                    if weigh_by_av and ("Rv" in cur_stat or "f_A" in cur_stat):
+                        # get Av values
+                        av_values = cat["Av" + "_" + stat_type][tindxs]
+                        values_foreach_pixel[cur_stat][i, j] = values / av_values
+                        weights = av_values
+                    else:
+                        values_foreach_pixel[cur_stat][i, j] = values
+                        weights = None
+
                     if median:
                         summary_stats[j, i, k] = np.median(values)
                         xabs = abs(values - np.median(values)) ** 2.
                         summary_sigmas[j, i, k] = np.sqrt(np.median(xabs)) / math.sqrt(len(values))
+                    else:
+                        summary_stats[j, i, k] = np.average(values, weights=weights)
+                        summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
 
     master_header = w.to_header()
     # Now, write the maps to disk
@@ -156,6 +176,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--median", default=False, type=bool, help="find the median of the values"
+    )
+    parser.add_argument(
+        "--chi2mincut", default=False, type=int, help="max chi2min threshold to place on results"
+    )
+    parser.add_argument(
+        "--weigh_by_av", default=False, type=bool, help="weigh R(V) or f_A by A(V)"
     )
     args = parser.parse_args()
 
