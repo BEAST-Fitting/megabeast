@@ -17,7 +17,11 @@ from beast.tools.create_background_density_map import (
 __all__ = ["create_naive_maps"]
 
 
-def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
+def create_naive_maps(stats_filename,
+                      pix_size=10.0,
+                      verbose=False,
+                      median=False,
+                      chi2mincut=False):
     """
     Make the naive maps by directly averaging the BEAST results for all the
     stars in each pixel.  Does not account for completeness, hence naive maps!
@@ -29,6 +33,12 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
 
     pix_size : float (default=10)
        size of pixels/regions in arcsec
+
+    median : bool (default=False)
+       calculate the median of the BEAST results (instead of the mean)
+
+    chi2mincut : int (default=None)
+       place a chi2min cut on the BEAST results
     """
 
     # type of statistic (make a commandline parameter later)
@@ -43,6 +53,9 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
         for fname in stats_filename[1:]:
             tcat = Table.read(fname)
             cat = vstack([cat, tcat])
+
+    if chi2mincut:
+        cat = cat[cat['chi2min'] < chi2mincut]
 
     # make RA/Dec grid
     ra = cat["RA"]
@@ -66,7 +79,7 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
     y = np.floor(pix_y)
 
     # setup arrary to store summary stats per pixel
-    sum_stats = ["Av", "Rv", "f_A"]
+    sum_stats = ["Av", "Rv", "f_A", "logT", "M_act", "logA"]
     n_sum = len(sum_stats)
     summary_stats = np.zeros((n_y + 1, n_x + 1, n_sum + 1), dtype=float)
     summary_sigmas = np.zeros((n_y + 1, n_x + 1, n_sum), dtype=float)
@@ -75,11 +88,14 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
         for cur_stat in sum_stats
     }
 
+    print('n_x', n_x)
+    print('n_y', n_y)
+    print('len x', np.shape(x))
+    print('len y', len(y))
     # loop through the pixels and generate the summary stats
     for i in range(n_x + 1):
         for j in range(n_y + 1):
             (tindxs,) = np.where((x == i) & (y == j))
-            # tindxs, = np.where((x == i) & (y == j) & (cat['chi2min'] < 10.))
             if len(tindxs) > 0:
                 summary_stats[j, i, n_sum] = len(tindxs)
                 if verbose:
@@ -88,14 +104,16 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
                     values = cat[cur_stat + "_" + stat_type][tindxs]
                     values_foreach_pixel[cur_stat][i, j] = values
                     summary_stats[j, i, k] = np.average(values)
-                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(
-                        len(values)
-                    )
+                    summary_sigmas[j, i, k] = np.std(values, ddof=1) / math.sqrt(len(values))
+                    if median:
+                        summary_stats[j, i, k] = np.median(values)
+                        xabs = abs(values - np.median(values)) ** 2.
+                        summary_sigmas[j, i, k] = np.sqrt(np.median(xabs)) / math.sqrt(len(values))
 
     master_header = w.to_header()
     # Now, write the maps to disk
     for k, cur_stat in enumerate(sum_stats):
-        map_name = stats_filename[0].replace("stats", "map" + cur_stat)
+        map_name = stats_filename[0].replace("stats.fits", "map_" + cur_stat + "_" + str(pix_size) + "arcsec.fits")
         hdu = fits.PrimaryHDU(summary_stats[:, :, k], header=master_header)
         hdu.writeto(map_name, overwrite=True)
 
@@ -104,12 +122,12 @@ def create_naive_maps(stats_filename, pix_size=10.0, verbose=False):
         hdu_sigma.writeto(sigma_name, overwrite=True)
 
     hdu = fits.PrimaryHDU(summary_stats[:, :, n_sum], header=master_header)
-    hdu.writeto(stats_filename[0].replace("stats", "npts"), overwrite=True)
+    hdu.writeto(stats_filename[0].replace("stats.fits", "npts.fits"), overwrite=True)
 
     # And store all the values in HDF5 format
     values_name = stats_filename[0].replace("stats.fits", "values_per_pixel.hd5")
     f = h5py.File(values_name, "w")
-    dt = h5py.special_dtype(vlen=np.dtype(np.float))
+    dt = h5py.special_dtype(vlen=float)
     for cur_stat in sum_stats:
         dset = f.create_dataset(cur_stat, (n_x, n_y), dtype=dt)
         for i, j in it.product(range(n_x), range(n_y)):
@@ -135,6 +153,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--verbose", default=False, type=bool, help="print pixel indices as a check"
+    )
+    parser.add_argument(
+        "--median", default=False, type=bool, help="find the median of the values"
     )
     args = parser.parse_args()
 
