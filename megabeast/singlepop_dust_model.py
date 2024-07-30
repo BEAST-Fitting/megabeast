@@ -17,6 +17,7 @@ class MB_Model:
     MegaBEAST model that provides member functions to compute
     the likelihood and priors for a specific physical model
     """
+
     def __init__(self, params):
         self.star_model = params.stellar_model
         self.dust_model = params.fd_model
@@ -328,6 +329,7 @@ def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
     fit_results : array
         set of best fit parameters
     """
+
     # standard minimization to find initial values
     def chi2(*args):
         return -1.0 * lnprob(*args)
