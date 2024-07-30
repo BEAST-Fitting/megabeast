@@ -45,7 +45,7 @@ class MB_Model:
             for cname, cval in zip(cmod["varnames"], cmod["varinit"]):
                 self.physics_model[cparam][cname] = cval
 
-            # setup the phyics model for this parameter
+            # setup the physics model for this parameter
             if cparam in self.star_model.keys():
                 if cparam == "logA":
                     self.physics_model[cparam]["x"] = self.star_model["x"]
@@ -120,7 +120,7 @@ class MB_Model:
            contains arrays of the likelihood*grid_weight values and
            indexs to the BEAST model grid
 
-        beast_moddata: dictonary
+        beast_moddata: dictionary
            contains arrays of the beast parameters for the full beast physics grid
 
         Returns
@@ -146,6 +146,11 @@ class MB_Model:
                 cur_physmod *= self.physics_model[cparam]["model"](
                     beast_moddata[cparam]
                 )
+                # print(cparam)
+                # print(phi)
+                # print(np.arange(0.0, 5.0, 0.1))
+                # print(self.physics_model[cparam]["model"](np.arange(0.0, 5.0, 0.1)))
+                # exit()
                 # if cparam == "logA":
                 #     print(self.physics_model[cparam]["values"])
 
@@ -185,16 +190,25 @@ class MB_Model:
 
         # compute the each star's integrated probability that it fits the new model
         # including the completeness function
+
         for i in range(n_stars):
             # mask for the finite star's lnpgrid values
-            gmask = np.isfinite(star_lnpgriddata["vals"][i])
+            gmask = np.isfinite(star_lnpgriddata["vals"][:, i])
             # indxs for the star's lnpgrid values in the full beast grid
-            curindxs = (star_lnpgriddata["indxs"][i])[gmask]
+            curindxs = (star_lnpgriddata["indxs"][:, i])[gmask]
+
+            # print(len(beast_moddata["Rv"][curindxs]))
+            # import matplotlib.pyplot as plt
+            # plt.plot(beast_moddata["Rv"][curindxs], (star_lnpgriddata["vals"][:, i])[gmask], "ko")
+            # plt.show()
+            # exit()
 
             # compute the integrated probability
             star_intprob = np.sum(
-                (star_lnpgriddata["vals"][i])[gmask]
+                (star_lnpgriddata["vals"][:, i])[gmask]
                 * cur_physmod[curindxs]
+                * beast_moddata["prior_weight"][curindxs]
+                * beast_moddata["grid_weight"][curindxs]
                 * beast_moddata["completeness"][curindxs]
             )
             # checks for spoilers
@@ -345,6 +359,7 @@ def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
     #    xtol=1e-20
     #    method="Nelder-Mead",
     # )
+    # exit()
 
     ndim, nwalkers = len(sparams), 5 * len(sparams)
 
@@ -353,7 +368,7 @@ def fit_ensemble(megabeast_model, star_lnpgriddata, beast_moddata):
     sampler = emcee.EnsembleSampler(
         nwalkers, ndim, lnprob, args=(megabeast_model, star_lnpgriddata, beast_moddata)
     )
-    nsteps = 100
+    nsteps = 300
     sampler.run_mcmc(pos, nsteps, progress=True)
     # samples = sampler.get_chain()
 

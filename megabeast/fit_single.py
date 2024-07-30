@@ -26,7 +26,7 @@ def main():
     # print(megabeast_model.physics_model)
 
     # BEAST files used by MegaBEAST
-    sedsfile = mbparams.beast_base + "_seds.grid.hd5"
+    sedsfile = mbparams.beast_base + "_seds_trim.grid.hd5"
     obsmodfile = mbparams.beast_base + "_noisemodel.grid.hd5"
     lnpfile = mbparams.beast_base + "_lnp.hd5"
 
