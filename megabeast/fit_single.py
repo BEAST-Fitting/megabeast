@@ -4,9 +4,8 @@ import numpy as np
 
 from beast.physicsmodel.grid import SEDGrid
 
-from megabeast.mbsettings import mbsettings
-from megabeast.helpers import get_likelihoods
-from megabeast.singlepop_dust_model import MB_Model, fit_ensemble, lnprob
+from megabeast.helpers import get_likelihoods, read_mbmodel
+from megabeast.mbmodel import MBModel, fit_ensemble, lnprob
 
 
 def main():
@@ -17,12 +16,9 @@ def main():
     )
     args = parser.parse_args()
 
-    # read the parameters into a class
-    mbparams = mbsettings(args.settings_file)
-    # should validate the inputs - make sure the required info is provided
-
     # define the model to fit
-    megabeast_model = MB_Model(mbparams)
+    mbparams = read_mbmodel(args.settings_file)
+    megabeast_model = MBModel(mbparams.stellar_model, mbparams.dust_model)
     # print(megabeast_model.physics_model)
 
     # BEAST files used by MegaBEAST

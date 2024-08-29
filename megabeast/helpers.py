@@ -1,15 +1,94 @@
 import numpy as np
 from numpy.random import default_rng
+import h5py
 
+from beast.physicsmodel.grid import SEDGrid
 from beast.tools.read_beast_data import read_lnp_data
 from beast.physicsmodel.grid_weights_stars import compute_bin_boundaries
 
 __all__ = [
+    "read_mbmodel",
+    "read_beast_moddata",
     "get_likelihoods",
     "precompute_mass_multipliers",
     "get_predicted_num_stars",
     "get_predicted_num_stars_simulate",
 ]
+
+
+def read_mbmodel(settings_file):
+    """
+    Read in the settings file and set parameters
+
+    Parameters
+    ----------
+    settings_file : string
+        filename that has the stellar_model and dust_model dictionaries
+    """
+
+    # read everything in as strings
+    with open(settings_file, "r") as f:
+        temp_data = f.readlines()
+    # remove empty lines and comments
+    input_data = [
+        line.strip()
+        for line in temp_data
+        if line.strip() != "" and line.strip()[0] != "#"
+    ]
+    # remove comments that are mid-line (e.g., "x = 5 #comment")
+    for i, line in enumerate(input_data):
+        try:
+            input_data[i] = line[: line.index("#")]
+        except ValueError:
+            pass
+    # if parameters are defined over multiple lines, combine lines
+    for i in reversed(range(len(input_data))):
+        if ("import " not in input_data[i]) and ("=" not in input_data[i]):
+            input_data[i - 1] += input_data[i]
+            del input_data[i]
+
+    # parse it into a dictionary
+    params = {}
+
+    for i in range(len(input_data)):
+        # execute imports
+        if "import " in input_data[i]:
+            exec(input_data[i])
+
+        # extract parameter and value (as strings)
+        else:
+            param = input_data[i].split("=")[0].strip()
+            # exec the string to get parameter values accessible
+            exec(input_data[i])
+            params[param] = eval(param)
+
+    return params
+
+
+def read_beast_moddata(physmodfile, obsmodfile, params):
+    """
+    Read in the BEAST model data.  Only read the physics and observation
+    information needed for the fitting.
+    """
+
+    # get the BEAST physics model info needed
+    #  using SEDGrid as it is faster than beast.tools.read_beast_data.read_sed_data
+    #  only read in the columns specifically needed
+    beast_moddata = {}
+    beast_physmod_param_list = params + ["prior_weight", "grid_weight"]
+
+    sgrid = SEDGrid(physmodfile, backend="disk")
+    for cparam in beast_physmod_param_list:
+        beast_moddata[cparam] = sgrid.grid[cparam]
+
+    # get the completeness from the BEAST observation model
+    #   use the maximum completeness across the bands as the correct obsmodel
+    #   would only have one completeness value per model
+    #   max is the best approximation for the toothpick model (maybe???  average??)
+    with h5py.File(obsmodfile, "r") as obs_hdf:
+        beast_moddata["completeness"] = np.max(obs_hdf["completeness"], axis=1)
+
+    return beast_moddata
 
 
 def get_likelihoods(ppdf_file, beast_model_data):
@@ -30,7 +109,7 @@ def get_likelihoods(ppdf_file, beast_model_data):
     # BEAST saves posterior PDFs labeled as log(pPDF)
     lnpdata = read_lnp_data(ppdf_file)
 
-    # divide by the BEAST prior weights to return to recover the likelihoods
+    # divide by the BEAST prior weights to recover the likelihoods
     n_lnps, n_stars = lnpdata["indxs"].shape
     for i in range(n_stars):
         indxs = lnpdata["indxs"][:, i]
@@ -102,9 +181,7 @@ def precompute_mass_multipliers(bphysparams, physmodmass):
     }
 
 
-def get_predicted_num_stars(
-    massmult_info, bphysparams, bphysmod, physmodage
-):
+def get_predicted_num_stars(massmult_info, bphysparams, bphysmod, physmodage):
     """
     Calculate the expected number of stars based on the physics model as
     given on the BEAST model grid including completeness.
@@ -164,9 +241,7 @@ def get_predicted_num_stars(
     return n_totstars
 
 
-def get_predicted_num_stars_simulate(
-    massmult_info, bphysparams, bphysmod, physmodage
-):
+def get_predicted_num_stars_simulate(massmult_info, bphysparams, bphysmod, physmodage):
     """
     Calculate the expected number of stars based on the physics model as
     given on the BEAST model grid including completeness.
